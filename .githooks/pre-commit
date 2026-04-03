@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# Pre-commit hook for cascading-context.
+# Runs verify-cascade.sh when docs/ or metrics.yml are staged.
+# Default: warn only. Set CASCADE_STRICT=1 to block commits.
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+
+# Load config if it exists
+if [ -f "$REPO_ROOT/.cascaderc" ]; then
+  source "$REPO_ROOT/.cascaderc"
+fi
+
+CASCADE_STRICT="${CASCADE_STRICT:-0}"
+
+# Check if any docs or metrics.yml are staged
+STAGED_DOCS=$(git diff --cached --name-only -- 'docs/*.md' 'metrics.yml' 2>/dev/null || true)
+
+if [ -z "$STAGED_DOCS" ]; then
+  exit 0
+fi
+
+echo "=== Cascading Context: Pre-commit check ==="
+echo "Staged files:"
+echo "$STAGED_DOCS" | sed 's/^/  /'
+echo ""
+
+# Run verification
+if ! "$REPO_ROOT/tools/verify-cascade.sh"; then
+  if [ "$CASCADE_STRICT" = "1" ]; then
+    echo ""
+    echo "BLOCKED: Verification failed and CASCADE_STRICT=1."
+    echo "Fix the issues above or set CASCADE_STRICT=0 in .cascaderc to warn only."
+    exit 1
+  else
+    echo ""
+    echo "WARNING: Verification found issues (see above). Committing anyway."
+    echo "Set CASCADE_STRICT=1 in .cascaderc to block commits with issues."
+  fi
+fi
+
+exit 0
