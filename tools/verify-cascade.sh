@@ -24,6 +24,9 @@ echo "--- Check 1: Last Updated Dates ---"
 while IFS= read -r doc; do
   [ -z "$doc" ] && continue
 
+  # Skip docs/README.md (vault rules, not a cascade doc)
+  [[ "$doc" == "$DOCS_DIR/README.md" ]] && continue
+
   status=$(grep '^\*\*Status:\*\*' "$doc" | head -1 | sed 's/\*\*Status:\*\* //' || true)
 
   # Skip archived and draft docs
@@ -61,6 +64,7 @@ if [ -f "$BATTLE_PLAN" ]; then
   while IFS= read -r doc; do
     [ -z "$doc" ] && continue
     [[ "$doc" == "$BATTLE_PLAN" ]] && continue
+    [[ "$doc" == "$DOCS_DIR/README.md" ]] && continue
 
     doc_date=$(grep '^\*\*Last Updated:\*\*' "$doc" | head -1 | sed 's/\*\*Last Updated:\*\* //' || true)
     [ -z "$doc_date" ] && continue
@@ -100,6 +104,9 @@ echo "--- Check 5: Inline Reference Staleness ---"
 
 while IFS= read -r doc; do
   [ -z "$doc" ] && continue
+
+  # Skip docs/README.md (vault rules, contains example syntax)
+  [[ "$doc" == "$DOCS_DIR/README.md" ]] && continue
 
   doc_date=$(grep '^\*\*Last Updated:\*\*' "$doc" | head -1 | sed 's/\*\*Last Updated:\*\* //' || true)
   [ -z "$doc_date" ] && continue
