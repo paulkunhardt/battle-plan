@@ -1,0 +1,6 @@
+# Cascading Context configuration
+# Copy this file to .cascaderc and edit as needed.
+
+# Set to 1 to block commits when verify-cascade.sh finds issues.
+# Default (0): warn but allow the commit.
+CASCADE_STRICT=0
