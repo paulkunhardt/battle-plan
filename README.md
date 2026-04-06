@@ -53,9 +53,40 @@ At the end of each work session, tell your LLM to run `/wrap-up`. It will:
 |--------|---------|
 | `tools/touch-date.sh <file>` | Sets `Last Updated` to today |
 | `tools/check-metrics.sh` | Verifies `metrics.yml` numbers against all doc references |
+| `tools/sync-metrics.sh` | Propagates `metrics.yml` values to all doc references |
 | `tools/verify-cascade.sh` | Full verification: dates, metrics, staleness, consistency |
 | `tools/init-project.sh` | Scaffolds your project (called by onboarding wizard) |
 | `tools/setup-hooks.sh` | Installs the git pre-commit hook |
+
+## Auto-Sync
+
+When `metrics.yml` changes, `tools/sync-metrics.sh` propagates the new values to every doc that references them. Numbers in docs use markdown links as source annotations:
+
+```
+[**42**](metrics.yml#outreach_sent)
+```
+
+This renders as a bold clickable **42** — clean for humans, machine-readable for scripts. When you run `sync-metrics.sh`, it finds all `[**N**](metrics.yml#field)` links and updates N to match the current value in `metrics.yml`.
+
+### Three ways to trigger sync:
+
+1. **LLM calls it** — Part of the cascade protocol (Step 0.5, after updating metrics.yml)
+2. **Claude Code hook** — Auto-fires when metrics.yml is written (add to `.claude/settings.local.json`):
+   ```json
+   {
+     "hooks": {
+       "PostToolUse": [{
+         "matcher": "Write|Edit",
+         "hooks": [{
+           "type": "command",
+           "command": "jq -r '.tool_input.file_path // .tool_response.filePath' | { read -r f; if [[ \"$f\" == *metrics.yml ]]; then tools/sync-metrics.sh; fi; } 2>/dev/null || true",
+           "timeout": 10
+         }]
+       }]
+     }
+   }
+   ```
+3. **Manual** — Just run `tools/sync-metrics.sh` after editing metrics.yml
 
 ## Configuration
 
