@@ -1,8 +1,9 @@
 # Competitive Landscape
 
-**Last Updated:** 2026-03-21
+**Last Updated:** 2026-04-07
 **Status:** Active
 **Role:** cascade-target
+**Compression:** amended
 
 **TL;DR:** Three main competitors in AI compliance automation: Drata ($200M+ ARR, recently raised pricing), Vanta (strong in SOC 2, weaker on ISO), SecureFrame (smallest, best UX). All focus on certification management, not evidence quality. None automate the compliance manager's daily documentation work — the gap CompliBot targets.
 

@@ -1,8 +1,9 @@
 # Domain 101 — Compliance & GRC Fundamentals
 
-**Last Updated:** 2026-03-14
+**Last Updated:** 2026-04-07
 **Status:** Active
 **Role:** cascade-target
+**Compression:** none
 
 **TL;DR:** Foundational knowledge for the compliance automation space. Key frameworks: ISO 27001 (international), SOC 2 (US/trust-based), GDPR (EU data). GRC = Governance, Risk, Compliance. The compliance lifecycle: scope → implement → evidence → audit → maintain. Most tools focus on the audit step; the evidence and maintain steps are where time is actually spent.
 

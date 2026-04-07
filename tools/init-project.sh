@@ -74,6 +74,7 @@ for domain in "${DOMAIN_ARRAY[@]}"; do
 **Last Updated:** $TODAY
 **Status:** Draft
 **Role:** cascade-target
+**Compression:** amended
 
 **TL;DR:** Initial ${domain} document for $PROJECT_NAME. To be filled in as the project progresses.
 
@@ -114,6 +115,7 @@ cat > "$REPO_ROOT/docs/battle-plan.md" << BPEOF
 **Last Updated:** $TODAY
 **Status:** Active
 **Role:** source-of-truth
+**Compression:** chronological
 
 **TL;DR:** $PROJECT_NAME — just initialized. Time horizon: ${HORIZON:-"not set"}. All metrics at 0. First priority: fill in the battle plan with real tasks and targets.
 
@@ -173,6 +175,7 @@ cat > "$REPO_ROOT/docs/external-insights.md" << EIEOF
 **Last Updated:** $TODAY
 **Status:** Active
 **Role:** cascade-target
+**Compression:** chronological
 
 **TL;DR:** All external conversations, calls, and meetings for $PROJECT_NAME. 0 sessions recorded so far.
 

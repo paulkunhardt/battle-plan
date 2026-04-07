@@ -100,9 +100,10 @@ Every doc in `docs/` must have this frontmatter:
 ```markdown
 # Document Title
 
-**Last Updated:** YYYY-MM-DD
+**Last Updated:** 2026-04-07
 **Status:** Active | Draft | Archived
 **Role:** source-of-truth | cascade-target
+**Compression:** chronological | amended | none
 
 **TL;DR:** One paragraph summary with key numbers and source references.
 
@@ -112,7 +113,40 @@ Every doc in `docs/` must have this frontmatter:
 - **Last Updated** must match today's date on any file modified in the current session.
 - **Status:** `Active` = live, `Draft` = WIP, `Archived` = excluded from cascade.
 - **Role:** `source-of-truth` = authoritative for its numbers. `cascade-target` = references numbers from elsewhere.
+- **Compression:** required field. One of `chronological`, `amended`, or `none` (see Compression Modes section below).
 - **TL;DR** must exist and contain all key metrics that appear in the doc.
+
+---
+
+## Compression Modes & Timestamping Rules
+
+Every doc declares a `Compression:` mode in frontmatter. This tells the `/distill` command (and humans) how new info gets added to the doc and how old info gets compressed when it grows too long. The mode IS the timestamping rule for new info.
+
+### `Compression: chronological`
+The doc is an append-only log of dated entries. Each new piece of info goes in a new dated section.
+
+- **Timestamping rule:** every new entry MUST start with a dated heading: `## Session N (YYYY-MM-DD) — <title>`, `## YYYY-MM-DD — <title>`, or `## DD Month YYYY — <title>`. No exceptions.
+- **Examples:** `docs/battle-plan.md` (daily log), `docs/validation/external-insights.md` (conversation journal).
+- **`/distill` behavior:** keeps the N most recent dated sections verbatim, archives the rest into `docs/archive/<same-path>`, replaces them with a thorough summary.
+
+### `Compression: amended`
+The doc is a living reference. Claims are amended in place over time.
+
+- **Timestamping rule:** every new finding that revises an existing claim MUST be added as an inline `> **[UPDATE YYYY-MM-DD · Source: ...]**` block placed immediately above the claim it modifies. Brand-new claims with no prior version don't need a stamp; they're stamped implicitly by the doc's `Last Updated` date and git history.
+- **Examples:** `docs/validation/hypotheses.md`, `docs/market/icp-and-targets.md`, `docs/market/competitive-landscape.md`.
+- **`/distill` behavior:** collapses old `[UPDATE]` blocks into the body text (preserving their content as integrated current-state), archives the raw blocks verbatim. Keeps the N most recent amendments per section inline.
+
+### `Compression: none`
+The doc is a static thesis or reference. It gets rewritten, not amended. Git history is the timeline.
+
+- **Timestamping rule:** none. Just edit the doc and let `Last Updated` + git track changes.
+- **Examples:** `docs/strategy/product-thesis.md`, `docs/research/domain-101.md`.
+- **`/distill` behavior:** refuses to run. If a `none` doc has grown unwieldy, rewrite it manually or change its `Compression:` mode first.
+
+### Why this matters
+The TL;DR is current state, not history. It can't tell `/distill` what's new vs old. The `Compression:` mode + timestamping rule is the only mechanism that makes distillation deterministic. Skipping the timestamp on a new entry in a `chronological` or `amended` doc is a bug; it will get silently absorbed into the wrong era during distillation.
+
+When in doubt about which mode a new doc should use: chronological logs choose `chronological`, claim trackers choose `amended`, everything else is `none`.
 
 ---
 

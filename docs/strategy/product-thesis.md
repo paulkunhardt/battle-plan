@@ -1,8 +1,9 @@
 # Product Thesis — CompliBot
 
-**Last Updated:** 2026-03-21
+**Last Updated:** 2026-04-07
 **Status:** Active
 **Role:** cascade-target
+**Compression:** none
 
 **TL;DR:** CompliBot is a continuous compliance agent for mid-market SaaS. Core thesis: compliance tools today automate certification (the audit event) but not compliance (the daily work). CompliBot automates evidence collection, documentation, and gap analysis between audits. Differentiator: AI that understands your specific business context, not generic control checklists. Phase 1: ISO 27001 evidence automation. Phase 2: SOC 2 + cross-framework mapping.
 
