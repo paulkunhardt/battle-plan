@@ -1,6 +1,6 @@
 # Cascading Context
 
-A simple markdown-based local database for isolated projects where people who poweruse Claude Code (or any other CLI based LLM tool) and accumulate more context than fits in one conversation.
+Is a simple markdown-based local database for isolated projects where people who poweruse Claude Code, (or any other CLI based LLM tool) and accumulate more context than fits in one conversation, can offload and structure their progress. The more isolated the context to one specific project the better. 
 
 ## Why?
 
