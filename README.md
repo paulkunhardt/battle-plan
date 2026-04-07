@@ -1,35 +1,29 @@
 # Cascading Context
 
-A docs system for people who run their work through Claude Code (or any other CLI based LLM tool) and accumulate more context than fits in one conversation.
+A simple markdown-based local database for isolated projects where people who poweruse Claude Code (or any other CLI based LLM tool) and accumulate more context than fits in one conversation.
 
-## Why I built this
+## Why?
 
-I'm a founder running a 3-week validation sprint. Every day there are customer calls, web research, outreach replies, new hypotheses to log, metrics to update. By Day 4 my Claude Code session was 90% me re-explaining what had happened the previous days. By Day 8 I was losing track of which numbers were current and which were stale. By Day 12 I had four different docs claiming four different versions of the same thing.
+This naturally evolved during a 3-week validation sprint. Timeboxed, clear focussed tasks, new content every day. If you can record and transcribe every relevant meeting, web research, outreach replies, new hypotheses to log, metrics, etc. then dumping all of that into Claude Code can be an amazing way to organize the entire project. This will inevitably lead to too much context, stale facts and lots of duplicates. 
 
 I wanted a setup where:
 
-1. The LLM could pick up where it left off, with full context, every morning, without me babysitting it.
+1. The LLM could pick up where it left off, with full context, every morning, so that I can brief ME and give ME tasks, not the other way around.
 2. New information would flow into the right docs automatically, in a fixed order, so nothing got dropped.
 3. Stale numbers would get caught before they made it into a pitch deck.
 4. Old context could be compressed without losing anything, once docs got too long for the LLM to read efficiently.
 
-This repo is what I came up with. It's the actual system I use every day.
+I use this every day and so far it's been a lot of fun.
 
 ## Who it's for
 
 This is for you if:
 
-- You live inside Claude Code, Cursor, Aider or similar CLI based LLM tools
+- You live inside Claude Code, Cursor, etc. and especially if you run LLMs via the CLI.
 - Your work is project based with a clear time horizon (a 3-week sprint, a 6-month research project, a quarter long deep dive)
 - You process a lot of input every day: meeting transcripts, web research, replies, notes, papers
 - You have specific targets you're trying to hit, like calls booked, papers read, customers signed, experiments run
 - You've already hit the wall where your LLM session gets too long, starts forgetting things, or starts hallucinating older context
-
-It's not for you if:
-
-- Your work is a long-running codebase. Use git, you don't need this.
-- You prefer Notion, Linear or Obsidian as your project hub. Stay there.
-- You don't want to think about how your docs are structured. The system has rules, and the LLM enforces them.
 
 ## What "cascading context" means
 
@@ -115,7 +109,6 @@ Full rules are in `CLAUDE.md` under "Compression Modes & Timestamping Rules".
 Claude Code reads `CLAUDE.md` and `.claude/commands/` automatically. For other tools:
 
 - **Cursor:** copy `CLAUDE.md` content into `.cursorrules`
-- **Aider:** add `CLAUDE.md` to `read:` in `.aider.conf.yml`
 - **Anything else:** load `CLAUDE.md` as your system prompt and replicate the slash commands as snippets
 
 ## Auto-sync for metrics
