@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "if [ ! -f .cascading-context-initialized ]; then echo 'ONBOARDING REQUIRED: This project has not been initialized. Start the onboarding wizard NOW — ask the questions from the Onboarding Wizard section in CLAUDE.md before doing anything else.'; fi",
+            "command": "if [ ! -f .battle-plan-initialized ]; then echo 'ONBOARDING REQUIRED: This project has not been initialized. Start the onboarding wizard NOW — ask the questions from the Onboarding Wizard section in CLAUDE.md before doing anything else.'; fi",
             "timeout": 5
           }
         ]

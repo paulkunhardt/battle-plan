@@ -4,33 +4,6 @@ You are helping manage an interconnected documentation system. Every document st
 
 ---
 
-## Onboarding Wizard
-
-**Trigger:** If the file `.battle-plan-initialized` does NOT exist in the repo root, run this wizard before doing anything else. A hook in `.claude/settings.json` will remind you on every prompt until onboarding is complete.
-
-### Steps
-
-1. Ask: **"What's your project in one sentence?"**
-2. Ask: **"What's your time horizon?"** (e.g., "3 weeks to demo day", "6 months to launch", "ongoing")
-3. Ask: **"What are the 3-5 key metrics you want to track?"** (e.g., "outreach sent, calls booked, LOIs signed")
-4. Ask: **"What domains does your work cover?"** Suggest domains based on the project description. (e.g., market, validation, strategy, research, content, logistics)
-5. Ask: **"Who are the key people you'll be working with or learning from?"** Names and roles.
-
-Ask one question at a time. After all 5 answers, run:
-
-```bash
-tools/init-project.sh \
-  --name "Project Name" \
-  --horizon "time horizon" \
-  --metrics "metric1,metric2,metric3" \
-  --domains "domain1,domain2,domain3" \
-  --people "Name1:Role1,Name2:Role2"
-```
-
-Then tell the user what was created and what to do next.
-
----
-
 ## The Cascade Protocol
 
 **Trigger:** Any incoming information that relates to the project — calls, messages, research, signals, status changes, decisions.
@@ -47,17 +20,17 @@ If any key metric changed, update `metrics.yml` first. This is the numeric sourc
 - Append to **Daily Log** for today
 
 ### Step 2: Update Cascade Docs
-Update only the docs relevant to the new information:
+Update only the docs relevant to the new information. Route new info to the appropriate domain doc under `docs/`. Common patterns:
 
-| Document | Update when... |
-|----------|---------------|
-| `docs/validation/external-insights.md` | Any new conversation, call, or meeting. Append as new session. |
-| `docs/validation/hypotheses.md` | Any evidence validates, invalidates, or adds nuance to a hypothesis. |
-| `docs/market/icp-and-targets.md` | Any outreach sent, reply received, call booked/completed, or new target. |
-| `docs/market/outreach-tracking.md` | Any outreach activity. Update the tracking table. |
-| `docs/market/competitive-landscape.md` | Any new competitor intel. |
-| `docs/strategy/product-thesis.md` | Any insight that affects the thesis or positioning. |
-| `docs/research/domain-101.md` | Any new foundational knowledge. |
+| Info type | Route to... |
+|-----------|------------|
+| Conversation, call, or meeting | `docs/external-insights.md` — append as new dated session |
+| Evidence for/against a hypothesis | The relevant domain doc — amend the claim with an `[UPDATE]` block |
+| Outreach sent/received | The relevant market or sales doc — update tracking tables |
+| Competitor intel | The relevant strategy or market doc |
+| New foundational knowledge | The relevant research or domain doc |
+
+If no doc exists for the info, append it to the closest domain overview doc. Only create a new file if the info doesn't fit anywhere.
 
 ### Step 3: Update Dates
 Run `tools/touch-date.sh` on every file you modified in this session:

@@ -1,5 +1,4 @@
 .cascaderc
-.battle-plan-initialized
 .battle-plan-onboarding.json
 .battle-plan-onboarding-done.json
 node_modules/

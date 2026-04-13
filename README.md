@@ -1,6 +1,23 @@
-# Cascading Context
+```
+                    ___  ____ ___ ___ _    ____
+                    |__] |__|  |   |  |    |___
+                    |__] |  |  |   |  |___ |___
 
-Is a simple markdown-based local database for isolated projects where people who poweruse Claude Code, (or any other CLI based LLM tool) and accumulate more context than fits in one conversation, can offload and structure their progress. The more isolated the context to one specific project the better.
+                   ___  _    ____ _  _
+                   |__] |    |__| |\ |
+                   |    |___ |  | | \|
+
+
+          new info ──→ metrics.yml
+                            │
+                     battle-plan.md
+                       /    |    \
+                 market  validation  strategy ...
+                            │
+                      verify-cascade.sh ✓
+```
+
+A markdown-based context system for projects where people who poweruse Claude Code (or any other CLI-based LLM tool) and accumulate more context than fits in one conversation, can offload and structure their progress. The more isolated the context to one specific project the better.
 
 ## Why?
 
@@ -28,18 +45,21 @@ This is for you if:
 ## Quick start
 
 ```bash
-git clone https://github.com/paulkunhardt/cascading-context.git my-project
-cd my-project
-claude
+npx create-battle-plan
 ```
 
-That's it. When Claude starts, the onboarding wizard runs automatically. It asks about your project and scaffolds your docs. The demo content gets moved to `examples/startup-validation/` so you can reference it later.
+That's it. The installer asks about your project and scaffolds everything. When it's done, open the folder in Claude Code and run `/good-morning` to start your first session.
 
-> **How the auto-start works:** A `UserPromptSubmit` hook in `.claude/settings.json` detects that the project hasn't been initialized yet and tells Claude to start the onboarding wizard. You just type anything — "hi", "let's go", or just hit enter — and the wizard kicks off. Once onboarding completes, the hook stops firing.
+> **Alternative:** If you prefer to clone manually:
+> ```bash
+> git clone https://github.com/paulkunhardt/battle-plan.git my-project
+> cd my-project && claude
+> ```
+> The onboarding wizard runs automatically on first prompt.
 
 ## Commands
 
-Cascading Context ships with slash commands you can run inside Claude Code. Type them at the prompt.
+Battle Plan ships with slash commands you can run inside Claude Code. Type them at the prompt.
 
 ### `/good-morning` — Start your day
 
@@ -76,17 +96,11 @@ How it works depends on the doc's `Compression:` mode (set in frontmatter):
 - **amended** docs (hypothesis trackers, target lists): collapses old `[UPDATE]` blocks into the body text, archives the raw blocks
 - **none** docs (static references): refuses to run — edit these directly
 
-## What "cascading context" means
+## How it works
 
-Most people use their LLM as a chat. Each conversation is fresh. Context comes from whatever you paste in or whatever the tool happens to load.
-
-That breaks down fast when you're processing a lot of new input every day. The LLM starts compressing your context window, summarising things you didn't want summarised, and forgetting the small details that mattered.
-
-Cascading context flips it. Instead of stuffing context into the conversation, you keep it in markdown files. When something new comes in (a call, a reply, a research finding, a metric change), the LLM updates a chain of files in a fixed order. Top of the chain: the operating doc that says "where am I right now". Bottom of the chain: source docs that hold the raw evidence.
+The "battle plan" is the central operating doc. When new information comes in — a call, a reply, a research finding, a metric change — the LLM updates a chain of files in a fixed order. Top of the chain: the battle plan that says "where am I right now". Bottom of the chain: source docs that hold the raw evidence.
 
 The LLM never has to remember anything between sessions. It just reads the files. The cascade rules tell it which files to update and in what order, so nothing gets dropped, and the deterministic scripts catch the things the LLM gets wrong.
-
-## How it works
 
 Three pieces:
 

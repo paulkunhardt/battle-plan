@@ -1,0 +1,31 @@
+{
+  "name": "create-battle-plan",
+  "version": "1.1.1",
+  "description": "Scaffold a Battle Plan project — a markdown-based context system for LLM-powered project management",
+  "bin": {
+    "create-battle-plan": "./bin/cli.js"
+  },
+  "files": [
+    "bin/",
+    "template/"
+  ],
+  "keywords": [
+    "claude",
+    "claude-code",
+    "llm",
+    "project-management",
+    "markdown",
+    "battle-plan",
+    "context",
+    "ai"
+  ],
+  "author": "Paul von Kunhardt",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/paulkunhardt/battle-plan"
+  },
+  "engines": {
+    "node": ">=16"
+  }
+}

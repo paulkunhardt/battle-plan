@@ -1,0 +1,2 @@
+# Only ignore node_modules — ship everything else including dotfiles
+node_modules/
