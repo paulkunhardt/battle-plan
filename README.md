@@ -1,20 +1,13 @@
 ```
-                    ___  ____ ___ ___ _    ____
-                    |__] |__|  |   |  |    |___
-                    |__] |  |  |   |  |___ |___
-
-                   ___  _    ____ _  _
-                   |__] |    |__| |\ |
-                   |    |___ |  | | \|
-
-
-          new info ──→ metrics.yml
-                            │
-                     battle-plan.md
-                       /    |    \
-                 market  validation  strategy ...
-                            │
-                      verify-cascade.sh ✓
+╔══════════════════════════════════════════════════════════════════╗
+║                                                                  ║
+║    ___  ____ ___ ___ _    ____   ___  _    ____ _  _             ║
+║    |__] |__|  |   |  |    |___   |__] |    |__| |\ |             ║
+║    |__] |  |  |   |  |___ |___   |    |___ |  | | \|             ║
+║                                                                  ║
+║           Your project's memory layer for Claude Code            ║
+║                                                                  ║
+╚══════════════════════════════════════════════════════════════════╝
 ```
 
 A markdown-based context system for projects where people who poweruse Claude Code (or any other CLI-based LLM tool) and accumulate more context than fits in one conversation, can offload and structure their progress. The more isolated the context to one specific project the better.
@@ -113,18 +106,16 @@ Three pieces:
 The loop looks like this:
 
 ```
-new info comes in
-   ↓
-LLM updates metrics.yml (if a number changed)
-   ↓
-LLM updates the battle plan (TL;DR, metrics table, daily log)
-   ↓
-LLM updates the source docs that own the new info
-   ↓
-LLM runs touch-date.sh on every file it touched
-   ↓
-LLM runs verify-cascade.sh and fixes anything it complains about
+          new info ──→ metrics.yml
+                            │
+                     battle-plan.md
+                       /    |    \
+                 market  validation  strategy ...
+                            │
+                      verify-cascade.sh ✓
 ```
+
+New info flows into `metrics.yml` first (if a number changed), then into the battle plan (TL;DR, metrics table, daily log), then into the source docs that own the new info. At the end, `verify-cascade.sh` checks that everything is consistent.
 
 You don't think about any of this. You just tell the LLM what happened. The cascade does the rest.
 
