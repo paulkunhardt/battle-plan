@@ -150,6 +150,7 @@ Three pieces:
 
 The loop looks like this:
 
+**Base cascade** (all projects):
 ```
           new info ──→ metrics.yml
                             │
@@ -160,9 +161,25 @@ The loop looks like this:
                       verify-cascade.sh ✓
 ```
 
-New info flows into `metrics.yml` first (if a number changed), then into the battle plan (TL;DR, metrics table, daily log), then into the source docs that own the new info. At the end, `verify-cascade.sh` checks that everything is consistent.
+**With the outreach add-on**, `leads.csv` sits above `metrics.yml` as the true source of truth. The flush scripts scan the CSV, derive all numbers automatically, and then the normal cascade kicks in:
 
-You don't think about any of this. You just tell the LLM what happened. The cascade does the rest.
+```
+  outreach activity ──→ leads.csv        ← single source of truth
+                            │
+                    flush-targets.js      ← (or flush-updates / flush-accepts)
+                            │
+                    sync-metrics.js       ← derives numbers from CSV
+                       /         \
+               metrics.yml    icp-conversion.md
+                    │            (mermaid dashboard)
+             battle-plan.md
+               /    |    \
+         market  validation  strategy ...
+                    │
+              verify-cascade.sh ✓
+```
+
+You never update metrics by hand. You tell the LLM what happened (or tick checkboxes in the blitz list), run the flush script, and everything cascades from there.
 
 ## Compression modes
 
