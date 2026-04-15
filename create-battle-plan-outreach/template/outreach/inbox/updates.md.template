@@ -1,0 +1,18 @@
+# Outreach updates — free-form dropbox
+
+> **How this works:** Drop one update per bullet below (anything in a blockquote like this is ignored). Run `node tools/outreach/flush-updates.js` and it parses each line into structured changes on `outreach/leads.csv`.
+>
+> If `ANTHROPIC_API_KEY` is set in `.env`, Claude Haiku parses with high accuracy.
+> Without it, a regex fallback handles common patterns like "Name replied", "Name = dead", "call booked".
+>
+> Examples:
+> - `Ernst replied, call today 16:30, email ernst@acme.com`
+> - `Sarah = dead, not interested`
+> - `NEW: https://linkedin.com/in/jane-doe — cold DM sent, source=manual_dm`
+> - `John from Acme ghosted, move to dead`
+>
+> Unclear lines get left in this file for retry.
+
+<!-- Your updates below this line -->
+
+-

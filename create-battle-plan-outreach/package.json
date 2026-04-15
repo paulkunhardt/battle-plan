@@ -1,0 +1,25 @@
+{
+  "name": "create-battle-plan-outreach",
+  "version": "1.0.0",
+  "description": "Add outreach tracking to your Battle Plan project — CSV-powered pipeline with daily blitz, metrics sync, and mermaid dashboards",
+  "bin": {
+    "create-battle-plan-outreach": "./bin/cli.js"
+  },
+  "files": [
+    "bin/",
+    "template/"
+  ],
+  "keywords": [
+    "claude", "claude-code", "llm", "outreach", "linkedin",
+    "battle-plan", "crm", "pipeline", "leads", "csv"
+  ],
+  "author": "Paul von Kunhardt",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/paulkunhardt/battle-plan"
+  },
+  "engines": {
+    "node": ">=16"
+  }
+}

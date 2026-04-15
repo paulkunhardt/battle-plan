@@ -179,3 +179,74 @@ When the user says `/wrap-up`, run this end-of-day sequence:
 - Tomorrow's top priorities
 
 **Step 6 — Commit:** Ask: "Want me to commit today's updates?" If yes, commit with message: `eod YYYY-MM-DD: [summary]`
+
+---
+
+## Outreach System (Add-on)
+
+**Trigger:** If `outreach/leads.csv` exists in the project, the outreach system is active.
+
+### Overview
+
+The outreach system tracks a LinkedIn (or any channel) outreach pipeline through `outreach/leads.csv`. This CSV is the **single source of truth** for all outreach metrics — `metrics.yml` is derived from it, never edited directly for outreach numbers.
+
+### First-Time Setup
+
+If `outreach/leads.csv` exists but `.outreach-initialized` does NOT exist, read `outreach/README.md` and follow the Interactive Setup instructions to onboard the user.
+
+### Daily Workflow Integration
+
+The outreach system plugs into the cascade protocol:
+
+1. User runs `node tools/outreach/daily-targets.js` → generates blitz checklist
+2. User sends messages, ticks checkboxes
+3. User runs `node tools/outreach/flush-targets.js` → updates leads.csv
+4. `flush-targets.js` calls `sync-metrics.js` → derives metrics.yml from CSV
+5. `sync-metrics.js` calls `update-dashboard.js` → regenerates mermaid dashboard
+6. The cascade protocol takes over: metrics.yml → battle-plan.md → domain docs
+
+### Scripts Reference
+
+| Script | Purpose |
+|--------|---------|
+| `tools/outreach/daily-targets.js [N]` | Generate daily blitz checklist |
+| `tools/outreach/flush-targets.js` | Process checked items from blitz |
+| `tools/outreach/flush-updates.js` | Parse free-form natural language updates |
+| `tools/outreach/flush-accepts.js` | Batch-process connection accepts |
+| `tools/outreach/flush-inbox.js` | Add leads from manual URL list |
+| `tools/outreach/sync-metrics.js` | Derive metrics.yml from leads.csv |
+| `tools/outreach/update-dashboard.js` | Regenerate mermaid conversion dashboard |
+| `tools/outreach/stats.js` | Print pipeline summary |
+| `tools/outreach/lookup.js "Name"` | Fuzzy-search leads |
+
+### Metrics Derivation
+
+These metrics in `metrics.yml` are **derived** from leads.csv (never hand-edit):
+
+- `outreach_sent` = leads with status past `new` or `contacted_at` set
+- `responses` = `replied_at` set or status past `replied`
+- `invitations_accepted` = leads tagged `accepted`
+- `discovery_calls` = `call_at` in the past or status `call_done`
+- `calls_booked` = status `call_booked` (snapshot)
+- `verbal_commitments` = status `verbal`, `loi`, or `paying`
+
+### Template System
+
+Message templates live in `tools/outreach/templates.json`. The daily blitz assigns templates based on the `country_template_map` field (or round-robin if no mapping). Template performance (sent/accepted/replied/calls) is tracked automatically and displayed in the blitz checklist.
+
+### Mermaid Dashboard
+
+`docs/analysis/icp-conversion.md` is auto-generated — never hand-edit. It contains:
+- Overall funnel chart (contacted → accepted → replied → call → verbal)
+- Conversion breakdown by role, company size, country, company type
+- Template A/B comparison
+- Kill/Keep/Scale verdicts per segment
+
+View in any mermaid-capable renderer (GitHub, VS Code preview, etc.).
+
+### Adapting the System
+
+- **Different metrics:** Edit the derivation rules in `tools/outreach/sync-metrics.js`
+- **Different time horizon:** The system tracks weekly breakdowns — adjust `daily-targets.js` count parameter
+- **Different channels:** The `channel` column supports any value (connection, inmail, email, etc.)
+- **Different statuses:** Add to `VALID_STATUS` in `tools/outreach/lib/leads.js` and update derivation rules

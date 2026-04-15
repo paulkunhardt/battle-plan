@@ -50,6 +50,41 @@ That's it. The installer asks about your project and scaffolds everything. When 
 > ```
 > The onboarding wizard runs automatically on first prompt.
 
+## Outreach Add-on
+
+Track your LinkedIn outreach pipeline with a CSV-powered system that integrates directly with Battle Plan's cascade protocol. Leads go in, metrics come out automatically.
+
+### Install
+
+```bash
+# In your existing Battle Plan project:
+npx create-battle-plan-outreach
+```
+
+### What you get
+
+- **`outreach/leads.csv`** — Single source of truth for every lead. 23 columns tracking the full pipeline from `new` → `dm_sent` → `replied` → `call_booked` → `call_done` → `verbal` → `paying`
+- **Daily blitz generator** — `node tools/outreach/daily-targets.js` creates a checklist of who to message today, sorted by priority, with template assignment and rate limit tracking
+- **Three flush paths** — Tick checkboxes, write free-form updates, or drop LinkedIn URLs. Every path syncs metrics automatically
+- **Mermaid conversion dashboard** — Auto-generated funnel charts, role/size/country breakdowns, template A/B testing, and Kill/Keep/Scale verdicts per segment
+- **Template performance tracking** — See which outreach messages get the best accept, reply, and call rates
+
+### Prerequisites
+
+- An existing Battle Plan project (`npx create-battle-plan` first)
+- A list of leads in any format (CSV, spreadsheet, or just names) — Claude helps you import them
+- Optional: `ANTHROPIC_API_KEY` in `.env` for AI-powered free-form update parsing
+
+### Daily workflow
+
+```
+Morning:  node tools/outreach/daily-targets.js  → generates today's blitz checklist
+Day:      Send messages, tick checkboxes
+Evening:  node tools/outreach/flush-targets.js   → syncs everything back to CSV + metrics
+```
+
+Claude handles the cascade from there — metrics.yml, battle plan, domain docs all update automatically.
+
 ## Commands
 
 Battle Plan ships with slash commands you can run inside Claude Code. Type them at the prompt.

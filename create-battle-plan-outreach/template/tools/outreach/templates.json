@@ -1,0 +1,14 @@
+{
+  "A": {
+    "text": "Hi [Name], I'm [your role] at [company]. We're working on [problem area] and I'd love to hear your take — is [specific pain point] something you deal with? Would be great to chat briefly. Cheers, [Your Name]",
+    "sent": 0,
+    "replies": 0,
+    "calls": 0
+  },
+  "B": {
+    "text": "Hi [Name], I noticed [something specific about them/their company]. I'm exploring [your area] and curious whether [specific question]. Happy to share what I've learned so far. Up for a quick chat? [Your Name]",
+    "sent": 0,
+    "replies": 0,
+    "calls": 0
+  }
+}
