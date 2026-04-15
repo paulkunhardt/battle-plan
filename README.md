@@ -37,6 +37,7 @@ I use this every day and so far it's been a lot of fun.
 **Also great for** anyone running a focused project with lots of incoming information:
 
 - You live inside Claude Code, Cursor, etc. and especially if you run LLMs via the CLI
+- You switch between multiple CLI-based LLMs (Claude Code, Gemini CLI, Codex, etc.) — since everything lives in markdown files on disk, any LLM you run in the project folder picks up the full context instantly. No siloed memories, no vendor lock-in. Switch models mid-day and nothing is lost
 - Your work is project-based with a clear time horizon (a 3-week sprint, a 6-month research project, a quarter-long deep dive)
 - You process a lot of input every day: meeting transcripts, web research, replies, notes, papers
 - You have specific targets you're trying to hit — calls booked, customers signed, experiments run, papers read
