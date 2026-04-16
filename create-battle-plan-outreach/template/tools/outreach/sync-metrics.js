@@ -46,6 +46,21 @@ const RESPONSE_STATUSES = new Set(['replied', 'call_booked', 'call_done']);
 // Statuses that imply a call happened or was scheduled
 const CALL_STATUSES = new Set(['call_booked', 'call_done', 'verbal', 'loi', 'paying']);
 
+// Proper ISO 8601 week calculation.
+// Algorithm: use the Thursday of the current week — that Thursday's year is the ISO week-year.
+// Week 1 contains the first Thursday of the year (equivalently, contains Jan 4).
+// Accepts a date string 'YYYY-MM-DD' or a Date.
+function isoWeekKey(input) {
+  const d = typeof input === 'string'
+    ? new Date(Date.UTC(+input.slice(0, 4), +input.slice(5, 7) - 1, +input.slice(8, 10)))
+    : new Date(Date.UTC(input.getFullYear(), input.getMonth(), input.getDate()));
+  const dayNum = d.getUTCDay() || 7;                 // Mon=1..Sun=7
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);         // shift to Thursday of this ISO week
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const weekNum = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+  return `${d.getUTCFullYear()}-W${String(weekNum).padStart(2, '0')}`;
+}
+
 function deriveMetrics(rows) {
   const today = new Date().toISOString().slice(0, 10);
 
@@ -115,12 +130,7 @@ function deriveMetrics(rows) {
 
     // --- Weekly breakdown ---
     if (wasSent && r.contacted_at) {
-      const d = new Date(r.contacted_at);
-      // ISO week: Mon=start
-      const jan4 = new Date(d.getFullYear(), 0, 4);
-      const dayOfYear = Math.floor((d - new Date(d.getFullYear(), 0, 1)) / 86400000);
-      const wk = Math.ceil((dayOfYear + jan4.getDay()) / 7);
-      const wkKey = `${d.getFullYear()}-W${String(wk).padStart(2, '0')}`;
+      const wkKey = isoWeekKey(r.contacted_at);
       if (!weeks[wkKey]) weeks[wkKey] = { connections: 0, inmails: 0, followups: 0, accepts: 0, replies: 0, calls: 0 };
       if (channel === 'inmail') weeks[wkKey].inmails++;
       else weeks[wkKey].connections++;
@@ -307,4 +317,4 @@ if (require.main === module) {
 }
 
 // Export for use by other scripts
-module.exports = { syncMetrics, deriveMetrics };
+module.exports = { syncMetrics, deriveMetrics, isoWeekKey };

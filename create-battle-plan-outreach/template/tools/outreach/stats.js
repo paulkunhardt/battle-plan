@@ -32,7 +32,7 @@ print('By country', tally(rows, 'country'), 10);
 print('By tag', tally(rows, 'tags'), 15);
 
 // Template performance — split by channel
-const { deriveMetrics } = require('./sync-metrics');
+const { deriveMetrics, isoWeekKey } = require('./sync-metrics');
 const { metrics: derived, conn_tpl, inmail_tpl, followups, weeks } = deriveMetrics(rows);
 const fmtPct = (n, d) => d > 0 ? `${(n / d * 100).toFixed(1)}%` : '  —';
 
@@ -94,11 +94,8 @@ if (sortedWeeks.length > 0) {
   }
   console.log(`  ${'TOTAL'.padEnd(9)}  ${String(totConn).padStart(4)}  ${String(totInmail).padStart(6)}  ${String(totTotal).padStart(5)}  ${String(totAcc).padStart(6)}  ${fmtPct(totAcc, totTotal).padStart(5)}  ${String(totRep).padStart(5)}  ${fmtPct(totRep, totTotal).padStart(5)}  ${String(totCal).padStart(5)}  ${fmtPct(totCal, totTotal).padStart(5)}`);
 
-  // Current week safety check
-  const now = new Date();
-  const jan4 = new Date(now.getFullYear(), 0, 4);
-  const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 1)) / 86400000);
-  const currentWk = `${now.getFullYear()}-W${String(Math.ceil((dayOfYear + jan4.getDay()) / 7)).padStart(2, '0')}`;
+  // Current week safety check (proper ISO 8601)
+  const currentWk = isoWeekKey(new Date());
   const thisWeek = weeks[currentWk];
   if (thisWeek) {
     console.log(`\n  ⚠️  This week (${currentWk}): ${thisWeek.connections} connection requests sent (LinkedIn limit: ~100/week)`);
