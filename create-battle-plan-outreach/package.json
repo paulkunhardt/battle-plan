@@ -1,6 +1,6 @@
 {
   "name": "create-battle-plan-outreach",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Add outreach tracking to your Battle Plan project — CSV-powered pipeline with daily blitz, metrics sync, and mermaid dashboards",
   "bin": {
     "create-battle-plan-outreach": "./bin/cli.js"
