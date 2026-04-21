@@ -136,6 +136,13 @@ function main() {
     tags.push('accepted');
     row.tags = tags.join(',');
 
+    // Stamp last touch = accept date. The follow-up cooldown in daily-targets.js
+    // measures days since `followed_up_at || contacted_at`. Without this line,
+    // the cooldown would measure from the original DM (potentially weeks old),
+    // pushing new accepts straight into the follow-up pool before they've had
+    // a chance to reply to the connection note.
+    row.followed_up_at = today;
+
     // Prepend note
     const note = `Accepted connection ${today}`;
     row.notes = row.notes ? `${note} | ${row.notes}` : note;

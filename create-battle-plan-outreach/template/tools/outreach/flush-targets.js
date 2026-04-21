@@ -200,23 +200,32 @@ function parseChecked(md) {
       const revenue = revMatch && revMatch[1] !== '' ? revMatch[1] : '';
       const company_type = typeMatch && typeMatch[1] !== '' ? typeMatch[1] : '';
 
-      // Look ahead for reject + withdraw-now sub-checkboxes
-      // Precedence: reject > withdraw-now > parent (send).
+      // Look ahead for reject + withdraw-now + snooze sub-checkboxes
+      // Precedence: reject > withdraw-now > snooze > parent (send).
       let rejectChecked = false;
       let rejectReason = '';
       let withdrawNowChecked = false;
-      for (let j = i + 1; j < Math.min(i + 6, lines.length); j++) {
+      let snoozeChecked = false;
+      for (let j = i + 1; j < Math.min(i + 7, lines.length); j++) {
         if (lines[j].match(/^- \[/)) break;
         const rej = lines[j].match(/^\s+- \[([xX])\]\s+reject(?::\s*(.+))?/i);
         if (rej) { rejectChecked = true; rejectReason = (rej[2] || '').trim(); }
         const wd = lines[j].match(/^\s+- \[([xX])\]\s+🗑️\s+withdraw\s+connection/i);
         if (wd) { withdrawNowChecked = true; }
+        const sn = lines[j].match(/^\s+- \[([xX])\]\s+💤\s+snooze/i);
+        if (sn) { snoozeChecked = true; }
       }
 
       if (rejectChecked) {
         rejected.push({ name, company, url, reason: rejectReason });
       } else if (withdrawNowChecked) {
         checked.push({ name, company, url, isWithdrawal: true, withdrawAge: 0, withdrawTier: 0, title, country, employees, revenue, company_type, isManualWithdraw: true });
+      } else if (snoozeChecked && isFollowup) {
+        // Snooze: defer follow-up by resetting last-touch to today. No message sent,
+        // no metric bump — just buys 3 more days before this lead reappears in the
+        // follow-up pool. Typical use: they accepted the connection yesterday, so
+        // it's too early to follow up even if the original DM is old.
+        checked.push({ name, company, url, isSnooze: true, title, country, employees, revenue, company_type });
       } else if (parentChecked) {
         checked.push({ name, company, url, template, title, country, employees, revenue, company_type, isFollowup, isInmail });
       }
@@ -368,10 +377,17 @@ function main() {
   const matched = [];
   const followedUp = [];
   const inmailed = [];
+  const snoozed = [];
   const unmatched = [];
   for (const item of nonWithdrawalChecked) {
     const lead = findLead(rows, item);
     if (!lead) { unmatched.push(item); continue; }
+    if (item.isSnooze) {
+      // No message sent. Just reset last-touch so the 3-day cooldown restarts.
+      lead.followed_up_at = today;
+      snoozed.push(lead);
+      continue;
+    }
     if (item.isFollowup) {
       // Follow-up: update followed_up_at, don't change status
       lead.followed_up_at = today;
@@ -453,6 +469,7 @@ function main() {
   console.log(`\n✓ Flushed ${newDms} DMs (${matched.length} checked, ${matched.length - newDms} already past new)`);
   if (withdrawn.length) console.log(`  🗑️ Withdrew ${withdrawn.length} stale invitations`);
   if (followedUp.length) console.log(`  🔄 Followed up on ${followedUp.length} accepted leads (followed_up_at → ${today})`);
+  if (snoozed.length) console.log(`  💤 Snoozed ${snoozed.length} follow-ups (followed_up_at → ${today}, no message sent)`);
   if (inmailed.length) console.log(`  📧 InMailed ${inmailed.length} leads (channel → inmail, followed_up_at → ${today})`);
   if (metadataOnly.length) console.log(`  ✏️  Corrected metadata on ${metadataOnly.length} leads (kept pending)`);
   if (rejectedMatched.length) console.log(`  ❌ Rejected ${rejectedMatched.length} leads (marked dead)`);

@@ -345,6 +345,7 @@ if (followupPicks.length > 0) {
   lines.push('');
   lines.push('> These people accepted your connection. A short follow-up message to book a call.');
   lines.push('> `last_touch` = followed_up_at or contacted_at. Oldest first.');
+  lines.push('> **`[x] 💤 snooze`** = not ready yet (e.g. they just accepted). Resets last-touch to today, no message sent, lead reappears in 3+ days.');
   lines.push('');
   // Follow-up template (copyable, not tracked)
   const fuTpl = templates['FU'];
@@ -371,6 +372,7 @@ if (followupPicks.length > 0) {
     const ctype = r.company_type ? `type:${r.company_type}` : 'type:';
 
     lines.push(`- [ ] 🔄 ${nameLink} · ${r.title || ''} · ${company} · ${country} · ${emp} · ${rev} · ${ctype} · last touch: ${lastTouch} (${days}d ago)${tagSuffix}`);
+    lines.push(`  - [ ] 💤 snooze (not ready yet)`);
     lines.push(`  - [ ] reject`);
     lines.push('');
     lines.push('---');
