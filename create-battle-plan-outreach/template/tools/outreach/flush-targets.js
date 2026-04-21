@@ -228,6 +228,10 @@ function parseChecked(md) {
         checked.push({ name, company, url, isSnooze: true, title, country, employees, revenue, company_type });
       } else if (parentChecked) {
         checked.push({ name, company, url, template, title, country, employees, revenue, company_type, isFollowup, isInmail });
+      } else if (isFollowup && (title || country || employees || revenue || company_type)) {
+        // Unchecked follow-up with metadata edits → sync the edits, don't send anything.
+        // Matches the withdrawal section's same-named behavior.
+        checked.push({ name, company, url, isMetadataOnly: true, title, country, employees, revenue, company_type });
       }
     }
   }
@@ -385,6 +389,7 @@ function main() {
     if (item.isSnooze) {
       // No message sent. Just reset last-touch so the 3-day cooldown restarts.
       lead.followed_up_at = today;
+      applyMetadataEdits(lead, item);
       snoozed.push(lead);
       continue;
     }
@@ -392,7 +397,7 @@ function main() {
       // Follow-up: update followed_up_at, don't change status
       lead.followed_up_at = today;
       lead.notes = `Follow-up sent ${today} | ${lead.notes || ''}`.replace(/\| $/, '');
-      if (item.company_type && item.company_type !== lead.company_type) lead.company_type = item.company_type;
+      applyMetadataEdits(lead, item);
       followedUp.push(lead);
     } else if (item.isInmail) {
       // InMail: mark channel as inmail, stamp followed_up_at so the 3-day

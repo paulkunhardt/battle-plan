@@ -5,6 +5,21 @@ All notable changes to `create-battle-plan-outreach` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2026-04-21
+
+### Fixed
+- Inline metadata edits (`emp:`, `rev:`, `type:`, title, country) on
+  follow-up rows in the daily blitz were silently dropped on flush —
+  only `type:` was being synced back to `leads.csv`. Symptom: "I keep
+  fixing `emp` and `rev` on the same follow-up leads every day and it
+  never sticks." The follow-up and snooze branches in `flush-targets.js`
+  now route through the same `applyMetadataEdits()` helper already used
+  by the withdrawal, InMail, and new-DM branches.
+- You can now edit metadata on a follow-up row **without** ticking any
+  action checkbox. The parser picks up the inline edits and persists
+  them via the existing `isMetadataOnly` path — same behavior the
+  withdrawal section has always had.
+
 ## [1.2.0] - 2026-04-21
 
 ### Fixed
@@ -51,6 +66,7 @@ anchored to the old DM date. You have two options:
 - CSV-powered outreach pipeline with daily blitz, metrics sync, and
   mermaid dashboards as a Battle Plan add-on.
 
+[1.2.1]: https://github.com/paulkunhardt/battle-plan/releases/tag/outreach-v1.2.1
 [1.2.0]: https://github.com/paulkunhardt/battle-plan/releases/tag/outreach-v1.2.0
 [1.1.0]: https://github.com/paulkunhardt/battle-plan/releases/tag/outreach-v1.1.0
 [1.0.0]: https://github.com/paulkunhardt/battle-plan/releases/tag/outreach-v1.0.0
