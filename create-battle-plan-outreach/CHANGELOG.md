@@ -5,6 +5,39 @@ All notable changes to `create-battle-plan-outreach` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.2] - 2026-04-21
+
+### Fixed
+- Rejection now works on **any** lead status, not just `new`. Previously,
+  ticking `[x] reject` on a `dm_sent` lead (typical in the InMail or
+  follow-up section) did nothing — status stayed `dm_sent`, no tag, no
+  note, and the lead re-surfaced in the next blitz. The processor loop
+  is now idempotent: it marks any non-`dead` lead as `dead` and appends
+  a `(was dm_sent)`-style audit trail to the note when the prior status
+  wasn't `new`.
+- Ticking `[x] reject` **and** `[x] 🗑️ withdraw connection` on the same
+  line now records both signals. Reject still wins precedence (lead is
+  terminal), but a `Connection withdrawn on LinkedIn` note is written
+  so the record matches what you did on LinkedIn.
+- Rejected items now also flow through `applyMetadataEdits()`, so
+  inline `emp:` / `rev:` / `type:` corrections on a reject line persist.
+
+### Changed
+- Console summary after flush now annotates rejections that came from
+  non-new stages, e.g. `❌ Rejected 6 leads (marked dead) (incl. 5 from
+  prior stages)`.
+
+### Migration
+
+No schema change. Leads where you previously ticked `reject` on a
+non-`new` row and nothing happened are still `dm_sent` in your CSV.
+Two options:
+1. **Do nothing** — next time they appear in a blitz, re-tick reject and
+   this version will handle them.
+2. **Backfill** (optional) — any lead whose `notes` contains a
+   `Rejected in blitz YYYY-MM-DD` line but whose `status` is not `dead`
+   can have its status flipped to `dead` in a one-shot CSV edit.
+
 ## [1.2.1] - 2026-04-21
 
 ### Fixed
@@ -66,6 +99,7 @@ anchored to the old DM date. You have two options:
 - CSV-powered outreach pipeline with daily blitz, metrics sync, and
   mermaid dashboards as a Battle Plan add-on.
 
+[1.2.2]: https://github.com/paulkunhardt/battle-plan/releases/tag/outreach-v1.2.2
 [1.2.1]: https://github.com/paulkunhardt/battle-plan/releases/tag/outreach-v1.2.1
 [1.2.0]: https://github.com/paulkunhardt/battle-plan/releases/tag/outreach-v1.2.0
 [1.1.0]: https://github.com/paulkunhardt/battle-plan/releases/tag/outreach-v1.1.0

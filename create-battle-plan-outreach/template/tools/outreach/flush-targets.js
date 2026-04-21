@@ -217,7 +217,11 @@ function parseChecked(md) {
       }
 
       if (rejectChecked) {
-        rejected.push({ name, company, url, reason: rejectReason });
+        // withdrewToo = user ticked BOTH reject and withdraw-connection on the same
+        // line (common on InMail rows when giving up on a stale dm_sent lead).
+        // Reject wins precedence (lead is terminal), but we still record the
+        // LinkedIn withdrawal in the note for audit.
+        rejected.push({ name, company, url, reason: rejectReason, withdrewToo: withdrawNowChecked, title, country, employees, revenue, company_type });
       } else if (withdrawNowChecked) {
         checked.push({ name, company, url, isWithdrawal: true, withdrawAge: 0, withdrawTier: 0, title, country, employees, revenue, company_type, isManualWithdraw: true });
       } else if (snoozeChecked && isFollowup) {
@@ -436,21 +440,27 @@ function main() {
   for (const item of rejected) {
     const lead = findLead(rows, item);
     if (!lead) continue;
-    if (lead.status === 'new') {
+    if (lead.status !== 'dead') {
+      const priorStatus = lead.status;
       lead.status = 'dead';
       const reason = item.reason || '';
+      const statusNote = priorStatus === 'new' ? '' : ` (was ${priorStatus})`;
       if (reason) {
-        lead.notes = `Rejected ${today}: ${reason} | ${lead.notes || ''}`.replace(/\| $/, '');
+        lead.notes = `Rejected ${today}${statusNote}: ${reason} | ${lead.notes || ''}`.replace(/\| $/, '');
         const reasonTag = classifyRejection(reason);
         const tags = (lead.tags || '').split(',').filter(Boolean);
         if (!tags.includes(reasonTag)) tags.push(reasonTag);
         lead.tags = tags.join(',');
       } else {
-        lead.notes = `Rejected in blitz ${today} — not ICP on manual review | ${lead.notes || ''}`.replace(/\| $/, '');
+        lead.notes = `Rejected in blitz ${today}${statusNote} — not ICP on manual review | ${lead.notes || ''}`.replace(/\| $/, '');
         const tags = (lead.tags || '').split(',').filter(Boolean);
         if (!tags.includes('rej-manual')) tags.push('rej-manual');
         lead.tags = tags.join(',');
       }
+      if (item.withdrewToo) {
+        lead.notes = `Connection withdrawn on LinkedIn ${today} | ${lead.notes || ''}`.replace(/\| $/, '');
+      }
+      applyMetadataEdits(lead, item);
       rejectedMatched.push(lead);
     }
   }
@@ -477,7 +487,11 @@ function main() {
   if (snoozed.length) console.log(`  💤 Snoozed ${snoozed.length} follow-ups (followed_up_at → ${today}, no message sent)`);
   if (inmailed.length) console.log(`  📧 InMailed ${inmailed.length} leads (channel → inmail, followed_up_at → ${today})`);
   if (metadataOnly.length) console.log(`  ✏️  Corrected metadata on ${metadataOnly.length} leads (kept pending)`);
-  if (rejectedMatched.length) console.log(`  ❌ Rejected ${rejectedMatched.length} leads (marked dead)`);
+  if (rejectedMatched.length) {
+    const fromStale = rejectedMatched.filter(l => /\(was (dm_sent|replied|call_booked|call_done|verbal|loi|withdrawn)\)/.test(l.notes || '')).length;
+    const suffix = fromStale > 0 ? ` (incl. ${fromStale} from prior stages)` : '';
+    console.log(`  ❌ Rejected ${rejectedMatched.length} leads (marked dead)${suffix}`);
+  }
   console.log(`  Archived → ${path.relative(ROOT, archived)}`);
   const allUnmatched = [...unmatched, ...withdrawUnmatched];
   if (allUnmatched.length) {
