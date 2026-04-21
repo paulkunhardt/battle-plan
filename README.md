@@ -23,7 +23,7 @@ This naturally evolved during a 3-week validation sprint for a startup idea. Tim
 
 I wanted a setup where:
 
-1. The LLM could pick up where it left off, with just the right context, every morning, so that I can brief ME and give ME tasks.
+1. The LLM could pick up where it left off, with just the right context, every morning, so that it can brief ME and give ME tasks.
 2. New information would flow into the right docs automatically, in a fixed order, so nothing got dropped.
 3. Stale numbers would get caught before they made it into a pitch deck.
 4. Old context could be compressed without losing anything, once docs got too long for the LLM to read efficiently.
