@@ -3,28 +3,36 @@ const path = require('path');
 
 const TASKS_PATH = path.resolve(__dirname, '../../../tasks.yml');
 
-const VALID_STATUS = new Set(['open', 'done', 'cancelled', 'snoozed']);
+const VALID_STATUS = new Set(['open', 'done', 'cancelled', 'snoozed', 'in_progress']);
 const VALID_PRIORITY = new Set([1, 2, 3]);
+
+// Default lane vocabulary. Adapt this to your project — lanes group tasks by
+// primary action, not topic. Update the LANE_KEYWORDS table in
+// tools/tasks/migrate-lanes.js if you change this set.
+const VALID_LANES = new Set(['build', 'outreach', 'discovery', 'infra', 'fundraising', 'meta']);
 
 // Minimal YAML reader/writer for our constrained schema.
 // Schema:
 //   last_updated: YYYY-MM-DD
 //   next_id: N
+//   last_triage_at: YYYY-MM-DD          # optional — set by /weekly-triage to suppress SessionStart nudge
 //   tasks:
 //     - id: N
 //       created: YYYY-MM-DD
 //       due: YYYY-MM-DD | null
-//       status: open|done|cancelled|snoozed
+//       status: open|done|cancelled|snoozed|in_progress
 //       priority: 1|2|3
+//       lane: build|outreach|discovery|infra|fundraising|meta
 //       tags: [a, b]
 //       title: "..."
 //       context: "..."
 //       done_at: YYYY-MM-DD | null
 //       snoozed_until: YYYY-MM-DD | null
+//       implications: [docs/path-a.md, docs/path-b.md]   # optional — docs that should change when this task closes
 
 const FIELD_ORDER = [
-  'id', 'created', 'due', 'status', 'priority', 'tags',
-  'title', 'context', 'done_at', 'snoozed_until'
+  'id', 'created', 'due', 'status', 'priority', 'lane', 'tags',
+  'title', 'context', 'done_at', 'snoozed_until', 'implications'
 ];
 
 function today() {
@@ -126,6 +134,7 @@ function save(state) {
   out.push('# Never hand-edit while today.md has unflushed checkbox changes — flush first.');
   out.push(`last_updated: ${state.last_updated}`);
   out.push(`next_id: ${state.next_id}`);
+  if (state.last_triage_at) out.push(`last_triage_at: ${state.last_triage_at}`);
   out.push('tasks:');
   for (const t of state.tasks) {
     let first = true;
@@ -160,6 +169,6 @@ function resolveSnoozed(state) {
 }
 
 module.exports = {
-  TASKS_PATH, VALID_STATUS, VALID_PRIORITY, FIELD_ORDER,
+  TASKS_PATH, VALID_STATUS, VALID_PRIORITY, VALID_LANES, FIELD_ORDER,
   today, load, save, nextId, resolveSnoozed
 };

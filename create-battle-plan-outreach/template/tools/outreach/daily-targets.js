@@ -164,11 +164,12 @@ if (fs.existsSync(TEMPLATES_PATH)) {
   }
 }
 
-// Get available template IDs (exclude config keys + follow-up meta template)
+// Get available template IDs (exclude config keys, follow-up meta, and noteless A/B templates).
+// Noteless templates are routed via buildNewDmTemplateMap below, not via round-robin.
 function getTemplateIds() {
   if (!fs.existsSync(TEMPLATES_PATH)) return [];
   const tpl = JSON.parse(fs.readFileSync(TEMPLATES_PATH, 'utf8'));
-  return Object.keys(tpl).filter(k => !CONFIG_KEYS.has(k) && k !== 'FU');
+  return Object.keys(tpl).filter(k => !CONFIG_KEYS.has(k) && k !== 'FU' && !tpl[k]?.no_note);
 }
 
 function assignTemplate(r, idx, pool) {
@@ -183,6 +184,26 @@ function assignTemplate(r, idx, pool) {
   const pool2 = unmapped.length > 0 ? unmapped : ids;
   return pool2[idx % pool2.length];
 }
+
+// Pre-compute new-DM template assignments so the noteless slots stay stable
+// across the rendered list. Routes every 3rd lead (idx 2, 5, 8, ...) to the
+// first template in templates.json with `no_note: true`. This spreads noteless
+// invites evenly across the priority gradient for unbiased A/B coverage.
+// If no noteless template is configured, returns an empty map (no-op).
+function buildNewDmTemplateMap(picks) {
+  const map = new Map();
+  if (!fs.existsSync(TEMPLATES_PATH)) return map;
+  const tpl = JSON.parse(fs.readFileSync(TEMPLATES_PATH, 'utf8'));
+  const noNoteIds = Object.keys(tpl).filter(k => !CONFIG_KEYS.has(k) && k !== 'FU' && tpl[k]?.no_note === true);
+  if (noNoteIds.length === 0) return map;
+  const noteId = noNoteIds[0];
+  for (let i = 2; i < picks.length; i += 3) {
+    map.set(picks[i], noteId);
+  }
+  return map;
+}
+
+const newDmTemplateMap = buildNewDmTemplateMap(newPicks);
 
 // --- Days since helper ---
 function daysSince(dateStr) {
@@ -202,7 +223,7 @@ lines.push('');
 lines.push(`Pools: ${newPool.length} new · ${followupPool.length} follow-up · ${inmailBase.length}/${inmailBaseCount} InMail qualified`);
 
 // --- Stale invitation detection (same rules as stale-invitations.js) ---
-const TIER1_DAYS = 7, TIER2_DAYS = 7, TIER3_DAYS = 14;
+const TIER1_DAYS = 7, TIER2_DAYS = 7, TIER3_DAYS = 10;
 const RECENT_TOUCH_DAYS = 3;  // any touch within this window overrides staleness (see stale-invitations.js)
 const pendingAll = rows.filter(r =>
   r.status === 'dm_sent' &&
@@ -288,16 +309,22 @@ lines.push(`**Follow-ups:** ${fuStats.sent} sent · ${fuStats.replied} replied (
 lines.push('');
 
 // Template texts as copyable quote blocks
+const hasNoteless = Object.values(templates).some(v => v && typeof v === 'object' && v.no_note === true);
 if (ranked.length > 0) {
   lines.push('### Templates');
   lines.push('');
   for (const t of ranked) {
-    lines.push(`**${t.id}**${t.id === defaultTemplate ? ' ★' : ''}`);
-    lines.push(`> ${t.text}`);
+    const isNoteless = templates[t.id]?.no_note === true;
+    lines.push(`**${t.id}**${t.id === defaultTemplate ? ' ★' : ''}${isNoteless ? ' 🚫📝' : ''}`);
+    if (isNoteless) {
+      lines.push('> **No note — bare connection request.** On LinkedIn: click *Connect* → *Send without a note*. A/B test vs templated invites — does noteless accept higher?');
+    } else {
+      lines.push(`> ${t.text}`);
+    }
     lines.push('');
   }
 }
-lines.push('**★ = best performer.** Country-mapped leads → assigned template, rest round-robin. Edit template code on any line to override.');
+lines.push(`**★ = best performer${hasNoteless ? ' · 🚫📝 = no note (A/B test)' : ''}.** Country-mapped leads → assigned template${hasNoteless ? ', every 3rd remaining → noteless template' : ''}, rest round-robin. Edit template code on any line to override.`);
 lines.push('');
 lines.push('> **Legend:** `[x]` = sent · edit `` `B` ``→`` `C` `` to change template · `[x] reject` = dead · `[x] reject: reason` = dead + tagged');
 lines.push('> **Emp/Rev/Type:** edit inline, syncs back to CSV on flush');
@@ -435,7 +462,7 @@ for (const r of newPicks) {
   // Legend reminder every 10 leads
   if (globalIdx > 0 && globalIdx % 10 === 0) {
     lines.push('');
-    lines.push('> `[x]` = sent · `` `A` ``/`` `B` ``/`` `C` `` = template · emp/rev editable · `[x] reject` = dead');
+    lines.push('> `[x]` = sent · template code in backticks (🚫📝 = no note) · emp/rev editable · `[x] reject` = dead');
     lines.push('');
   }
 
@@ -451,9 +478,10 @@ for (const r of newPicks) {
   const ctype = r.company_type ? `type:${r.company_type}` : 'type:';
   const tags = (r.tags || '').split(',').filter(t => t && t !== 'salesnav-stage1' && t !== 'tier1').slice(0, 3).join(' ');
   const tagSuffix = tags ? ` _[${tags}]_` : '';
-  const tpl = assignTemplate(r, globalIdx, newPicks);
+  const tpl = newDmTemplateMap.get(r) || assignTemplate(r, globalIdx, newPicks);
+  const noteHint = templates[tpl]?.no_note ? ' 🚫📝' : '';
 
-  lines.push(`- [ ] \`${tpl}\` ${nameLink} · ${title} · ${company} · ${country} · ${emp} · ${rev} · ${ctype} · p${r.priority || '?'}${tagSuffix}`);
+  lines.push(`- [ ] \`${tpl}\`${noteHint} ${nameLink} · ${title} · ${company} · ${country} · ${emp} · ${rev} · ${ctype} · p${r.priority || '?'}${tagSuffix}`);
   lines.push(`  - [ ] reject`);
   lines.push('');
   lines.push('---');

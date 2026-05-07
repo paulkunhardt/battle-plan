@@ -27,7 +27,7 @@ const { load, save } = require('./lib/leads');
 const TEMPLATES_PATH = path.resolve(__dirname, 'templates.json');
 const TIER1_DAYS = 7;   // pending + InMail → withdraw after 7d
 const TIER2_DAYS = 7;   // pending + excluded ICP type → withdraw after 7d
-const TIER3_DAYS = 14;  // pending + any type → withdraw after 14d
+const TIER3_DAYS = 10;  // pending + any type → withdraw after 10d (LinkedIn accept curve collapses past day 10)
 const RECENT_TOUCH_DAYS = 3;  // any outbound touch within this window overrides staleness
 
 // Read excluded company types from templates.json (configurable per project)

@@ -43,7 +43,7 @@ function mapCheckbox(ch) {
   if (ch === ' ') return 'open';
   if (ch === 'x' || ch === 'X') return 'done';
   if (ch === '-') return 'cancelled';
-  if (ch === '/') return 'open';
+  if (ch === '/') return 'in_progress';
   return 'open';
 }
 
@@ -79,10 +79,14 @@ for (const line of lines) {
     patch.status = 'cancelled';
     patch.done_at = doneMatch ? doneMatch[1] : tasks.today();
   } else {
+    // newStatus is 'open' or 'in_progress'. Resurrect terminal-state tasks and
+    // honor open ↔ in_progress transitions.
     if (prevStatus === 'done' || prevStatus === 'cancelled' || prevStatus === 'snoozed') {
-      patch.status = 'open';
+      patch.status = newStatus;
       patch.done_at = null;
       patch.snoozed_until = null;
+    } else if (prevStatus !== newStatus) {
+      patch.status = newStatus;
     }
   }
 

@@ -57,12 +57,32 @@ function priorityEmoji(p) {
   return '';
 }
 
+// Lane vocabulary (mirrors VALID_LANES in lib/tasks.js). Drives display order
+// in today.md and the human-readable label per lane group. Adapt to your project.
+const LANE_DISPLAY = {
+  build: 'Build',
+  outreach: 'Outreach',
+  discovery: 'Discovery',
+  infra: 'Infra',
+  fundraising: 'Fundraising',
+  meta: 'Meta'
+};
+const LANE_ORDER = ['build', 'outreach', 'discovery', 'infra', 'fundraising', 'meta'];
+const PRIORITY_HEADERS = {
+  1: '### ⏫ Today (P1)',
+  2: '### 🔼 This week (P2)',
+  3: '### 🔽 Backlog (P3)'
+};
+
 function renderTaskLine(t) {
   const parts = [];
-  parts.push(`- [ ] TASK-${t.id} ${t.title}`);
+  const box = t.status === 'in_progress' ? '/' : ' ';
+  parts.push(`- [${box}] TASK-${t.id} ${t.title}`);
   if (t.due) parts.push(`📅 ${t.due}`);
   const pe = priorityEmoji(t.priority);
   if (pe) parts.push(pe);
+  // Nested hashtag — Obsidian Tasks plugin treats this as a filterable lane group.
+  if (t.lane) parts.push(`#lane/${t.lane}`);
   if (Array.isArray(t.tags) && t.tags.length) {
     parts.push(t.tags.map(x => '#' + x).join(' '));
   }
@@ -111,7 +131,7 @@ function buildPulseSection(leads, metrics) {
 
 function buildQuerySections(state) {
   const sections = [];
-  const open = state.tasks.filter(t => t.status === 'open');
+  const open = state.tasks.filter(t => t.status === 'open' || t.status === 'in_progress');
   const byP = p => open.filter(t => t.priority === p).length;
 
   const commonOpts = [
@@ -162,32 +182,61 @@ function buildQuerySections(state) {
 }
 
 function buildTaskDataSection(state) {
-  const open = state.tasks.filter(t => t.status === 'open');
-  open.sort((a, b) => {
-    if (a.priority !== b.priority) return a.priority - b.priority;
-    if (a.due && b.due) return a.due.localeCompare(b.due);
-    if (a.due) return -1;
-    if (b.due) return 1;
-    return a.id - b.id;
-  });
+  const open = state.tasks.filter(t => t.status === 'open' || t.status === 'in_progress');
 
-  let rendered = open;
-  if (!showAll) {
-    const highMed = open.filter(t => t.priority <= 2);
-    const low = open.filter(t => t.priority === 3).slice(0, 5);
-    rendered = [...highMed, ...low];
+  // Group by priority, then lane.
+  const byPriority = { 1: [], 2: [], 3: [] };
+  for (const t of open) {
+    const p = byPriority[t.priority] || (byPriority[t.priority] = []);
+    p.push(t);
   }
 
-  const raw = rendered.map(renderTaskLine).join('\n');
-  return [
+  const out = [
     '---',
     '',
     '## Task data',
     '',
     '*Source rows for the queries above. `flush-today.js` reads these. Editable — checkboxes, due dates, priorities, snooze (`🛫 YYYY-MM-DD`) all round-trip. Run `node tools/tasks/flush-today.js` after edits.*',
-    '',
-    raw
-  ].join('\n');
+    ''
+  ];
+
+  for (const priority of [1, 2, 3]) {
+    let pTasks = byPriority[priority] || [];
+    if (pTasks.length === 0) continue;
+
+    // P3 (backlog) is collapsed to first 5 unless --all.
+    if (priority === 3 && !showAll) pTasks = pTasks.slice(0, 5);
+
+    out.push(PRIORITY_HEADERS[priority] || `### P${priority}`);
+    out.push('');
+
+    // Group by lane within priority.
+    const byLane = {};
+    for (const t of pTasks) {
+      const lane = t.lane || 'meta';
+      (byLane[lane] = byLane[lane] || []).push(t);
+    }
+
+    const orderedLanes = [
+      ...LANE_ORDER.filter(l => byLane[l]),
+      ...Object.keys(byLane).filter(l => !LANE_ORDER.includes(l))
+    ];
+
+    for (const lane of orderedLanes) {
+      const laneTasks = byLane[lane];
+      laneTasks.sort((a, b) => {
+        if (a.due && b.due) return a.due.localeCompare(b.due);
+        if (a.due) return -1;
+        if (b.due) return 1;
+        return a.id - b.id;
+      });
+      out.push(`**${LANE_DISPLAY[lane] || lane}** (${laneTasks.length})`);
+      for (const t of laneTasks) out.push(renderTaskLine(t));
+      out.push('');
+    }
+  }
+
+  return out.join('\n').trimEnd();
 }
 
 // --- Main ---
@@ -228,4 +277,8 @@ sections.push(`*Generated ${stamp}. Queries above are live — edit checkboxes a
 const content = sections.join('\n\n') + '\n';
 if (!fs.existsSync(path.dirname(TODAY_MD))) fs.mkdirSync(path.dirname(TODAY_MD), { recursive: true });
 fs.writeFileSync(TODAY_MD, content);
-if (!quiet) console.log(`✓ Wrote ${path.relative(ROOT, TODAY_MD)} (${state.tasks.filter(t => t.status === 'open').length} open task(s))`);
+if (!quiet) {
+  const openCount = state.tasks.filter(t => t.status === 'open').length;
+  const ipCount = state.tasks.filter(t => t.status === 'in_progress').length;
+  console.log(`✓ Wrote ${path.relative(ROOT, TODAY_MD)} (${openCount} open + ${ipCount} in_progress)`);
+}

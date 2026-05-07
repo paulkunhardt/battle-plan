@@ -10,5 +10,13 @@
     "sent": 0,
     "replies": 0,
     "calls": 0
+  },
+  "NONE": {
+    "text": "(no note — bare connection request)",
+    "no_note": true,
+    "rationale": "A/B test: does a noteless invite get more accepts than a templated one? Some research suggests bare invites accept higher because they look less salesy. daily-targets.js routes every 3rd new-DM here automatically. Delete this entry to disable the experiment.",
+    "sent": 0,
+    "replies": 0,
+    "calls": 0
   }
 }

@@ -99,6 +99,8 @@ anchored to the old DM date. You have two options:
 - CSV-powered outreach pipeline with daily blitz, metrics sync, and
   mermaid dashboards as a Battle Plan add-on.
 
+[1.3.0]: https://github.com/paulkunhardt/battle-plan/releases/tag/outreach-v1.3.0
+[1.3.0]: https://github.com/paulkunhardt/battle-plan/releases/tag/outreach-v1.3.0
 [1.2.2]: https://github.com/paulkunhardt/battle-plan/releases/tag/outreach-v1.2.2
 [1.2.1]: https://github.com/paulkunhardt/battle-plan/releases/tag/outreach-v1.2.1
 [1.2.0]: https://github.com/paulkunhardt/battle-plan/releases/tag/outreach-v1.2.0
