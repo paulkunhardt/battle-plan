@@ -1,5 +1,7 @@
 # Outreach Tracking
 
+> **EXAMPLE CONTENT** — Part of the fictional "CompliBot" demo project. Tracking numbers are illustrative. New projects scaffolded via `npx create-battle-plan` start from empty templates.
+
 **Last Updated:** 2026-04-07
 **Status:** Active
 **Role:** cascade-target

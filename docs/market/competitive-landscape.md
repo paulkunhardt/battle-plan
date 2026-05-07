@@ -1,5 +1,7 @@
 # Competitive Landscape
 
+> **EXAMPLE CONTENT** — Part of the fictional "CompliBot" demo project. Numbers and competitor details are illustrative, not researched. New projects scaffolded via `npx create-battle-plan` start from empty templates.
+
 **Last Updated:** 2026-04-07
 **Status:** Active
 **Role:** cascade-target

@@ -1,5 +1,7 @@
 # Product Thesis — CompliBot
 
+> **EXAMPLE CONTENT** — "CompliBot" is a fictional product used throughout this repo to demonstrate what a populated battle plan looks like. New projects scaffolded via `npx create-battle-plan` start from empty templates.
+
 **Last Updated:** 2026-04-07
 **Status:** Active
 **Role:** cascade-target

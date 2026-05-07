@@ -1,5 +1,7 @@
 # Battle Plan — CompliBot Validation Sprint
 
+> **EXAMPLE CONTENT** — Fictional product ("CompliBot") used to demonstrate what a populated battle plan looks like. New projects scaffolded via `npx create-battle-plan` start from empty templates. Replace or delete this when using the system for real work.
+
 **Last Updated:** 2026-04-07
 **Status:** Active
 **Role:** source-of-truth
