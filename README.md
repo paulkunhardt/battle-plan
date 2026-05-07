@@ -43,6 +43,17 @@ I use this every day and so far it's been a lot of fun.
 - You have specific targets you're trying to hit: calls booked, customers signed, experiments run, papers read
 - You've already hit the wall where your LLM session gets too long, starts forgetting things, or starts hallucinating older context
 
+**This is NOT for users looking for full automation.** Battle Plan is a foundation layer for people who want to work *with* an AI as a project manager — actively, daily, hands-on. The memory system is only as good as the input you give it. Concretely, that means:
+
+- You run `/good-morning`, `/wrap-up`, and `/weekly-triage` religiously. They're 10-25 minutes each and they're the spine of the system. Skip them and the cascade silts up.
+- You transcribe your meetings (any tool — phone recording + Whisper, Otter, whatever), drop the transcripts in, and answer Claude's follow-up questions about them.
+- You go through old tasks during weekly triage and use your own brain to merge, demote, and reorganize. The script gives Claude the data; Claude gives you the bounded choices; you make the strategic calls.
+- You give Claude as much context as you can stand to type, because the more it has, the sharper its briefings.
+
+In return, you get a memory layer that compounds. Week 1 it's a glorified todo list. By week 6 it's a working twin of your project. By month 3, when you `cd` into the folder and open Claude, it already knows what's going on and starts prompting *you* — "did you ever hear back from X?", "you said you'd test H42 today, where did that land?". The work the AI does for you grows over time; the work you do for the AI shrinks. You can drift toward something close to full automation, but you have to earn it by investing the early effort.
+
+If you want to drop in a tool and have it figure your project out from scratch, this is the wrong system. If you want to invest a few weeks teaching it your project so it can run alongside you for the next year, this is the right one.
+
 ## Quick start
 
 ```bash
@@ -60,6 +71,10 @@ That's it. The installer asks about your project and scaffolds everything. When 
 
 ## How this system is meant to be used
 
+**The chat is the only UI you actually need.** Everything else — the battle plan, the cascade, `tasks.yml`, even `today.md` — exists for the LLM, not for you. You can run this whole system without ever opening a markdown file: tell Claude what happened, ask Claude what's next, let it read and write the underlying docs.
+
+The one exception is the **outreach add-on**: the daily blitz checklist (`outreach/inbox/YYYY-MM-DD.md`) has checkboxes you tick as you send LinkedIn messages. Without that interactive surface, the system has no way to know which messages actually went out. Everything else is optional reading.
+
 This scaffold ships with two layers of documents. They are **not interchangeable**, and understanding the split is the key to getting value out of the system.
 
 ### Layer 1 — The cascade (for the LLM)
@@ -68,9 +83,9 @@ This scaffold ships with two layers of documents. They are **not interchangeable
 
 **You, the human user, do not need to read the battle plan daily.** You can edit it if you want, but the default is: let the AI maintain it. Ask the AI questions when you need context — "what did we learn from the last three discovery calls?" — and it will traverse the cascade for you. Over weeks and months, the battle plan and its source docs become a deep, searchable memory of your project that the AI uses to be dramatically more useful than it could be from chat context alone.
 
-### Layer 2 — Your daily surface
+### Layer 2 — Your daily surface (optional)
 
-`docs/today.md` is regenerated from `tasks.yml` every time you run `node tools/tasks/render-today.js`. It uses three ```tasks query blocks on top (Today / This week / Backlog) that render as styled, interactive lists via the [Obsidian Tasks plugin](https://publish.obsidian.md/tasks/) — pill chips for due dates, priority icons, clickable checkboxes. Below them sits a `## Task data` section with the raw `- [ ]` source lines; the plugin indexes those, the queries project them, and the flush script reads them. You click through your day in the query-block UI.
+`docs/today.md` is regenerated from `tasks.yml` every time you run `node tools/tasks/render-today.js`. It uses three ```tasks query blocks on top (Today / This week / Backlog) that render as styled, interactive lists via the [Obsidian Tasks plugin](https://publish.obsidian.md/tasks/) — pill chips for due dates, priority icons, clickable checkboxes. Below them sits a `## Task data` section with the raw `- [ ]` source lines; the plugin indexes those, the queries project them, and the flush script reads them. Tasks are grouped by lane (`build / outreach / discovery / infra / fundraising / meta`) within each priority bucket so you can scan by area instead of a flat priority-sorted wall. If you like a visual checklist, today.md is where you live; if you'd rather just ask Claude what's next, that works too — it reads `tasks.yml` directly.
 
 When you're done with the day, run `node tools/tasks/flush-today.js` and your checkbox edits get reconciled back into `tasks.yml`. The file archives to `docs/today-archive/YYYY-MM-DD.md` for history.
 
@@ -181,10 +196,27 @@ Run this at the end of each work session. Claude will:
 2. Present the status for your review
 3. Ask for any last updates (small things count: a reply, a thought, a link)
 4. Run the full cascade to sync everything
-5. Report: metrics changed (before/after), docs updated, tomorrow's priorities
-6. Offer to commit with an `eod YYYY-MM-DD: [summary]` message
+5. **Task hygiene (Step 4.5):** detect git-drift (open tasks where recent commits mention `TASK-N` — probably done but not flipped) and ask you to confirm closure; archive closed tasks older than 14 days into `tasks-archive.yaml`; regenerate today.md so closures land on tomorrow's surface
+6. Report: metrics changed (before/after), docs updated, tomorrow's priorities, task-hygiene summary
+7. Offer to commit with an `eod YYYY-MM-DD: [summary]` message
 
 This is how you close out clean every day without forgetting to log something.
+
+### `/weekly-triage` – Weekly task sweep
+
+Run this once a week (Sunday-ish, or whenever the SessionStart nudge fires). The system surfaces every open task one at a time and walks you through an arrow-key multi-choice menu: **Done / Snooze 7 days / Demote / Merge into TASK-X**, plus an "Other" option for `delete / promote / keep / lane LANE / priority N`. Each decision applies to `tasks.yml` immediately — no batching.
+
+The underlying `triage.js` data layer surfaces:
+
+- Overdue and stale tasks
+- Recent git commits mentioning a TASK-ID (signals "this is probably done")
+- *Implications drift* — when a task has linked docs (`--implication path/to/doc.md`) and the doc hasn't been touched since the task was created
+- *Source context* — what battle-plan day spawned the task, which transcript it came from, which hypothesis it relates to (so you don't get a 3-week-old task and think "what does this even mean?")
+- *Blocked-by chains* — tasks waiting on another open task get a pass on the stale-flag and a "chase the blocker" suggestion instead
+
+It takes 15-25 minutes for a full sweep. The SessionStart hook auto-nudges if it's been 7+ days since your last triage, or if 20+ tasks are sitting ≥14 days old, or if the open pile is over 60. The skill stamps `last_triage_at` on completion to silence the nudge until the next cycle.
+
+This is the difference between a `tasks.yml` that compounds in value over months and one that silts up into a dead pile.
 
 ### `/distill <doc-path> [keep:N]` – Compress a long doc
 
