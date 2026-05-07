@@ -42,8 +42,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   work; routine pipeline maintenance lives in `daily-targets.js` +
   `leads.csv` flags), and "personalities don't get their own lane".
 - **`add.js` flags:** `--lane LANE` (validated against `VALID_LANES`,
-  defaults to `meta`) and `--implication PATH` (repeatable, accumulates
-  to `task.implications`).
+  defaults to `meta`), `--implication PATH` (repeatable, accumulates to
+  `task.implications`), and `--blocked-by N` (repeatable; comma-separated
+  also accepted; each ID validated against existing rows).
+- **`tools/tasks/archive.js`** — moves `status: done|cancelled` rows with
+  `done_at < today - 14d` into a sibling `tasks-archive.yaml` (created on
+  first run; same schema; sorted by `done_at` ascending). Idempotent.
+  Backfill-safe: closed rows missing `done_at` get stamped today and kept
+  one cycle. Flags: `--days N` / `--all` / `--dry-run`.
+- **`/wrap-up` Step 4.5 — task hygiene as daily routine.** Three sub-steps:
+  4.5a detect git-drift (open tasks with commits mentioning their TASK-N —
+  prompt user to confirm closure); 4.5b run archive.js; 4.5c re-render
+  today.md so closures land on the day's surface.
+- **`blocked_by: [TASK-IDs]` field** on tasks. When at least one blocker
+  is still open: triage shows a `🚧 Blocked by:` line per task; the stale
+  flag and snooze-or-demote suggestion are suppressed (a deliberate
+  blocker shouldn't penalize the task); replacement suggestion becomes
+  "blocked — chase blocker(s) or demote"; stats gain a "Blocked by
+  another open task: N" line. `render-today.js` emits a `🚧 blocked-by:
+  TASK-N,TASK-M` token on the task line — only for *still-open* blockers,
+  so the token disappears once a blocker closes.
+- **`triage.js` source-context.** Each task now shows a `Source:` line
+  derived from three signals: (1) battle-plan day match — scans
+  `docs/battle-plan.md` for headings in three formats and maps
+  `task.created` → "Day N — title"; (2) transcript references —
+  regex-extracts `docs/archive/validation/transcripts/...` paths from
+  the task's `tags` + `context`; (3) hint tags matching
+  `^(spawned-by-|from-|call-|h\d+)`. Helps the user re-orient on tasks
+  whose origin context has faded.
+
+### Fixed
+- **`lib/tasks.js` array-int serializer.** Integers inside arrays were
+  being wrapped in quotes on round-trip (`blocked_by: ["74"]` instead of
+  `[74]`), which would break `byId.get(id)` lookups in triage. Latent
+  before — `implications` are strings; surfaced now that `blocked_by` is
+  the first int-array field.
 
 ### Changed
 - The Two-View Model section of CLAUDE.md is sharper: the chat is the

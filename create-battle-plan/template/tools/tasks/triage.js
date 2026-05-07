@@ -58,6 +58,61 @@ function commitsMentioning(id) {
   }
 }
 
+// Build a {YYYY-MM-DD: "Day N — title"} map by scanning docs/battle-plan.md for headings.
+// Three formats accepted (covers our actual heading conventions and most plausible variants).
+let _battlePlanDayMap = null;
+function battlePlanDayMap() {
+  if (_battlePlanDayMap !== null) return _battlePlanDayMap;
+  _battlePlanDayMap = {};
+  const bp = path.join(ROOT, 'docs/battle-plan.md');
+  if (!fs.existsSync(bp)) return _battlePlanDayMap;
+  const text = fs.readFileSync(bp, 'utf8');
+  for (const line of text.split('\n')) {
+    // Format A: "### Day N — Weekday Month D *(... · YYYY-MM-DD)*"
+    let m = line.match(/^#{2,4}\s+Day\s+(\d+)\s*[—-]\s*([^*]+?)\s*\*\([^·]*·\s*(\d{4}-\d{2}-\d{2})\)\*\s*$/);
+    if (m) { _battlePlanDayMap[m[3]] = `Day ${m[1]} — ${m[2].trim()}`; continue; }
+    // Format B: "## Day N (YYYY-MM-DD)" or "### Day N (YYYY-MM-DD) — title"
+    m = line.match(/^#{2,4}\s+Day\s+(\d+)\s*\((\d{4}-\d{2}-\d{2})\)\s*(?:[—-]\s*(.+))?$/);
+    if (m) { _battlePlanDayMap[m[2]] = `Day ${m[1]}${m[3] ? ' — ' + m[3].trim() : ''}`; continue; }
+    // Format C: "## YYYY-MM-DD — title"
+    m = line.match(/^#{2,4}\s+(\d{4}-\d{2}-\d{2})\s*(?:[—-]\s*(.+))?$/);
+    if (m) { _battlePlanDayMap[m[1]] = m[2] ? m[2].trim() : 'battle-plan entry'; }
+  }
+  return _battlePlanDayMap;
+}
+
+// Extract transcript paths referenced from a task's tags + context.
+function transcriptRefs(t) {
+  const haystack = [t.context || '', ...(t.tags || [])].join(' ');
+  const matches = haystack.match(/docs\/archive\/validation\/transcripts\/[^\s,;)]+/g);
+  return matches ? Array.from(new Set(matches)) : [];
+}
+
+// Source/origin context — where did this task come from?
+function sourceContext(t) {
+  const out = [];
+  if (t.created) {
+    const dayLabel = battlePlanDayMap()[t.created];
+    if (dayLabel) out.push(`battle-plan: ${dayLabel}`);
+  }
+  for (const tr of transcriptRefs(t)) out.push(`transcript: ${tr}`);
+  const hintTags = (t.tags || []).filter(tag => /^(spawned-by-|from-|call-|h\d+)/i.test(tag));
+  if (hintTags.length) out.push(`tags: ${hintTags.join(', ')}`);
+  return out.length ? out : null;
+}
+
+// Resolve blocked_by IDs to {id, status, title, open} entries.
+function resolveBlockedBy(t, allTasks) {
+  if (!Array.isArray(t.blocked_by) || !t.blocked_by.length) return null;
+  const byId = new Map(allTasks.map(x => [x.id, x]));
+  return t.blocked_by.map(id => {
+    const b = byId.get(id);
+    if (!b) return { id, status: 'unknown', title: '?', open: false };
+    const open = b.status === 'open' || b.status === 'in_progress';
+    return { id, status: b.status, title: (b.title || '').slice(0, 60), open };
+  });
+}
+
 function implicationsDrift(t) {
   if (!Array.isArray(t.implications) || !t.implications.length) return null;
   const drift = [];
@@ -75,6 +130,7 @@ function implicationsDrift(t) {
 }
 
 function suggestion(flags, t) {
+  if (flags.blockedByOpen) return 'blocked — chase blocker(s) or demote';
   if (flags.overdue && flags.overdueDays > 14) return 'demote (overdue >14d — losing momentum)';
   if (flags.stale && !t.due) return `snooze ${STALE_DAYS}d or demote (open ${flags.ageDays}d, no due)`;
   if (flags.commitMentions) return 'check if recent commits closed this — done?';
@@ -93,18 +149,23 @@ function buildReport() {
   for (const t of open) {
     const ageDays = t.created ? daysBetween(t.created, today) : 0;
     const overdueDays = t.due ? daysBetween(t.due, today) : 0;
+    const blockers = resolveBlockedBy(t, state.tasks);
+    const blockedByOpen = blockers ? blockers.some(b => b.open) : false;
     const flags = {
       overdue: t.due && overdueDays > 0,
       overdueDays,
-      stale: !t.due && ageDays >= STALE_DAYS,
+      // Suppress the stale flag when the only reason a task is sitting open is a deliberate blocker.
+      stale: !t.due && ageDays >= STALE_DAYS && !blockedByOpen,
       ageDays,
       commitMentions: false,
-      drift: false
+      drift: false,
+      blockedByOpen
     };
     const commits = commitsMentioning(t.id);
     flags.commitMentions = commits.length > 0;
     const drift = implicationsDrift(t);
     flags.drift = drift !== null;
+    const source = sourceContext(t);
 
     items.push({
       id: t.id,
@@ -121,6 +182,8 @@ function buildReport() {
       flags,
       commits,
       drift,
+      blockers: blockers || [],
+      source_context: source || [],
       suggestion: suggestion(flags, t)
     });
   }
@@ -135,6 +198,7 @@ function buildReport() {
     total_open: open.length,
     overdue: items.filter(i => i.flags.overdue).length,
     stale: items.filter(i => i.flags.stale && !i.flags.overdue).length,
+    blocked: items.filter(i => i.flags.blockedByOpen).length,
     by_lane: {}
   };
   for (const i of items) {
@@ -165,7 +229,8 @@ function renderMarkdown(report) {
   out.push('');
   out.push(`- Total open: ${report.stats.total_open}`);
   out.push(`- Overdue: ${report.stats.overdue}`);
-  out.push(`- Stale (≥${report.stale_threshold_days}d, not overdue): ${report.stats.stale}`);
+  out.push(`- Stale (≥${report.stale_threshold_days}d, not overdue, not blocked): ${report.stats.stale}`);
+  out.push(`- Blocked by another open task: ${report.stats.blocked}`);
   out.push('- By lane:');
   for (const [lane, n] of Object.entries(report.stats.by_lane)) {
     out.push(`  - ${lane}: ${n}`);
@@ -178,6 +243,10 @@ function renderMarkdown(report) {
     const flagBits = [];
     if (i.flags.overdue) flagBits.push(`\`overdue ${i.flags.overdueDays}d\``);
     if (i.flags.stale && !i.flags.overdue) flagBits.push(`\`open ${i.flags.ageDays}d\``);
+    if (i.flags.blockedByOpen) {
+      const openIds = i.blockers.filter(b => b.open).map(b => b.id);
+      flagBits.push(`\`blocked by TASK-${openIds.join(', TASK-')}\``);
+    }
     if (i.flags.drift) flagBits.push('`drift`');
     if (i.flags.commitMentions) flagBits.push('`commit-mentioned`');
     const flagStr = flagBits.length ? ' — ' + flagBits.join(' ') : '';
@@ -185,6 +254,10 @@ function renderMarkdown(report) {
     out.push(`### TASK-${i.id} (P${i.priority} · ${i.lane} · ${dueStr} · age ${i.ageDays}d)${flagStr}`);
     out.push('');
     out.push(`**${i.title}**`);
+    if (i.source_context && i.source_context.length) {
+      out.push('');
+      out.push(`*Source:* ${i.source_context.join(' · ')}`);
+    }
     if (i.context) {
       out.push('');
       out.push(`> ${i.context}`);
@@ -192,6 +265,11 @@ function renderMarkdown(report) {
     if (i.tags.length) {
       out.push('');
       out.push(`Tags: ${i.tags.map(t => '`' + t + '`').join(' ')}`);
+    }
+    if (i.blockers && i.blockers.length) {
+      const labels = i.blockers.map(b => `TASK-${b.id} [${b.status}]${b.open ? ' 🚧' : ' ✅'} ${b.title}`);
+      out.push('');
+      out.push(`*🚧 Blocked by:* ${labels.join(' · ')}`);
     }
     if (i.drift) {
       out.push('');

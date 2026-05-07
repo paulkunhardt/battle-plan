@@ -1,14 +1,16 @@
 #!/usr/bin/env node
 // tools/tasks/add.js — CLI to append a task to tasks.yml.
 // Usage: node tools/tasks/add.js "title" [--due YYYY-MM-DD] [--tag X] [--priority 1|2|3]
-//                                         [--lane LANE] [--implication PATH] [--context "..."] [--snooze YYYY-MM-DD]
+//                                         [--lane LANE] [--implication PATH] [--blocked-by N]
+//                                         [--context "..."] [--snooze YYYY-MM-DD]
+//   --blocked-by: TASK-ID (number) that must close first. Repeatable; comma-separated also accepted.
 
 const tasks = require('./lib/tasks');
 
 function parseArgs(argv) {
   const args = {
     title: null, due: null, tags: [], priority: 2,
-    lane: 'meta', implications: [],
+    lane: 'meta', implications: [], blockedBy: [],
     context: null, snooze: null
   };
   const positional = [];
@@ -19,6 +21,13 @@ function parseArgs(argv) {
     else if (a === '--priority') args.priority = parseInt(argv[++i], 10);
     else if (a === '--lane') args.lane = argv[++i];
     else if (a === '--implication') args.implications.push(argv[++i]);
+    else if (a === '--blocked-by') {
+      const v = argv[++i];
+      for (const part of String(v).split(',')) {
+        const n = parseInt(part.trim(), 10);
+        if (!isNaN(n)) args.blockedBy.push(n);
+      }
+    }
     else if (a === '--context') args.context = argv[++i];
     else if (a === '--snooze') args.snooze = argv[++i];
     else positional.push(a);
@@ -29,7 +38,7 @@ function parseArgs(argv) {
 
 const args = parseArgs(process.argv.slice(2));
 if (!args.title) {
-  console.error('Usage: node tools/tasks/add.js "title" [--due YYYY-MM-DD] [--tag X] [--priority 1|2|3] [--lane LANE] [--implication PATH] [--context "..."] [--snooze YYYY-MM-DD]');
+  console.error('Usage: node tools/tasks/add.js "title" [--due YYYY-MM-DD] [--tag X] [--priority 1|2|3] [--lane LANE] [--implication PATH] [--blocked-by N] [--context "..."] [--snooze YYYY-MM-DD]');
   process.exit(1);
 }
 if (!tasks.VALID_PRIORITY.has(args.priority)) {
@@ -61,6 +70,15 @@ const task = {
   snoozed_until: args.snooze || null
 };
 if (args.implications.length) task.implications = args.implications;
+if (args.blockedBy.length) {
+  const knownIds = new Set(state.tasks.map(t => t.id));
+  const unknown = args.blockedBy.filter(n => !knownIds.has(n));
+  if (unknown.length) {
+    console.error(`Invalid --blocked-by: TASK-${unknown.join(', TASK-')} not found in tasks.yml.`);
+    process.exit(1);
+  }
+  task.blocked_by = args.blockedBy;
+}
 state.tasks.push(task);
 tasks.save(state);
 
@@ -69,7 +87,8 @@ const flagSummary = [
   `lane ${args.lane}`,
   args.due && `due ${args.due}`,
   args.tags.length && `tags ${args.tags.join(',')}`,
-  args.implications.length && `implications ${args.implications.join(',')}`
+  args.implications.length && `implications ${args.implications.join(',')}`,
+  args.blockedBy.length && `blocked-by TASK-${args.blockedBy.join(' TASK-')}`
 ].filter(Boolean).join(', ');
 console.log(`✓ Added TASK-${id} (${flagSummary})`);
 console.log(`  ${args.title}`);

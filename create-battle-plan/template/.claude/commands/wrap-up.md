@@ -42,6 +42,28 @@ With all info gathered, run the full cascade from CLAUDE.md:
 4. Run `tools/touch-date.sh` on every modified file
 5. Run `tools/verify-cascade.sh` — fix any errors
 
+## Step 4.5: Task hygiene — REQUIRED daily
+
+This step keeps `tasks.yml` honest. Run before regenerating `today.md` so any closures land in the day's surface.
+
+**4.5a — Detect drift (tasks that should be closed but aren't):**
+
+Run `node tools/tasks/triage.js --json` and scan the output for any open task with non-empty `recent_commits` (commits mentioning `TASK-N` since the task was created). For each:
+- Surface to the user: "TASK-{id} ({title}) — recent commit '{subject}' suggests it's done. Mark closed?"
+- If yes → set `status: done`, `done_at: <today>` via Edit on `tasks.yml`. If no → leave it.
+
+Also surface any open task with `implications_drift` flagged (linked doc untouched since task created) — the user may have closed the work without updating the doc, OR the doc work is genuinely pending.
+
+**4.5b — Archive old closed tasks:**
+
+Run `node tools/tasks/archive.js`. This moves any `status: done|cancelled` row with `done_at < today - 14d` into `tasks-archive.yaml` (created on first run). Idempotent. Default retention = 14 days; pass `--days N` to override or `--all` to archive everything closed.
+
+**4.5c — Regenerate today.md:**
+
+Run `node tools/tasks/render-today.js --quiet` so today's surface reflects any closures from 4.5a.
+
+If 4.5a/4.5b changed anything, list it in Step 5 ("Task hygiene: N closed via git-drift, M archived").
+
 ## Step 5: Report
 
 Print:
@@ -49,6 +71,7 @@ Print:
 - **Docs updated** (list of files touched)
 - **Verification warnings** (if any)
 - **Tomorrow's top priorities** (carry-forwards + known agenda items)
+- **Task hygiene** (if Step 4.5 changed anything)
 
 ## Step 6: Commit
 

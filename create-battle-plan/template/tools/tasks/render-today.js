@@ -74,7 +74,7 @@ const PRIORITY_HEADERS = {
   3: '### 🔽 Backlog (P3)'
 };
 
-function renderTaskLine(t) {
+function renderTaskLine(t, openIds) {
   const parts = [];
   const box = t.status === 'in_progress' ? '/' : ' ';
   parts.push(`- [${box}] TASK-${t.id} ${t.title}`);
@@ -83,6 +83,14 @@ function renderTaskLine(t) {
   if (pe) parts.push(pe);
   // Nested hashtag — Obsidian Tasks plugin treats this as a filterable lane group.
   if (t.lane) parts.push(`#lane/${t.lane}`);
+  // Surface still-open blockers only — once the blocker closes, the token disappears
+  // from the daily surface. flush-today.js ignores this token (LINE_RE matches checkbox + TASK-N).
+  if (Array.isArray(t.blocked_by) && t.blocked_by.length) {
+    const stillOpen = openIds ? t.blocked_by.filter(id => openIds.has(id)) : t.blocked_by;
+    if (stillOpen.length) {
+      parts.push(`🚧 blocked-by:TASK-${stillOpen.join(',TASK-')}`);
+    }
+  }
   if (Array.isArray(t.tags) && t.tags.length) {
     parts.push(t.tags.map(x => '#' + x).join(' '));
   }
@@ -183,6 +191,7 @@ function buildQuerySections(state) {
 
 function buildTaskDataSection(state) {
   const open = state.tasks.filter(t => t.status === 'open' || t.status === 'in_progress');
+  const openIds = new Set(open.map(t => t.id));
 
   // Group by priority, then lane.
   const byPriority = { 1: [], 2: [], 3: [] };
@@ -231,7 +240,7 @@ function buildTaskDataSection(state) {
         return a.id - b.id;
       });
       out.push(`**${LANE_DISPLAY[lane] || lane}** (${laneTasks.length})`);
-      for (const t of laneTasks) out.push(renderTaskLine(t));
+      for (const t of laneTasks) out.push(renderTaskLine(t, openIds));
       out.push('');
     }
   }

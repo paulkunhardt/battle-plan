@@ -29,10 +29,11 @@ const VALID_LANES = new Set(['build', 'outreach', 'discovery', 'infra', 'fundrai
 //       done_at: YYYY-MM-DD | null
 //       snoozed_until: YYYY-MM-DD | null
 //       implications: [docs/path-a.md, docs/path-b.md]   # optional — docs that should change when this task closes
+//       blocked_by: [TASK-IDs]                             # optional — task IDs that must close before this one is actionable
 
 const FIELD_ORDER = [
   'id', 'created', 'due', 'status', 'priority', 'lane', 'tags',
-  'title', 'context', 'done_at', 'snoozed_until', 'implications'
+  'title', 'context', 'done_at', 'snoozed_until', 'implications', 'blocked_by'
 ];
 
 function today() {
@@ -61,7 +62,9 @@ function serializeScalar(v) {
   if (typeof v === 'number' || typeof v === 'boolean') return String(v);
   if (Array.isArray(v)) {
     if (v.length === 0) return '[]';
-    return '[' + v.map(x => serializeString(x)).join(', ') + ']';
+    // Preserve number/boolean primitives so int-arrays (e.g. blocked_by) don't
+    // get re-quoted as strings on round-trip.
+    return '[' + v.map(x => (typeof x === 'number' || typeof x === 'boolean') ? String(x) : serializeString(x)).join(', ') + ']';
   }
   return serializeString(v);
 }

@@ -63,6 +63,30 @@ When you see the SessionStart nudge fire, mention it in chat ("📋 Last triage 
 
 Tasks may carry `implications: [docs/path-a.md, docs/path-b.md]` — a list of docs that should change when the task closes. `triage.js` flags drift when a linked doc's last git commit predates the task: the status flip happened, but the cascaded doc-update didn't. When you create a task whose closure should mutate a specific doc, pass `--implication path/to/doc.md` to `add.js` so triage can hold you accountable later.
 
+### `blocked_by` field
+
+Tasks may also carry `blocked_by: [TASK-IDs]` — an array of TASK-IDs that must close before this task is actionable. Set via `add.js --blocked-by N` (repeatable; comma-separated also accepted; each ID validated against existing rows). When at least one blocker is still open:
+
+- `triage.js` shows a `🚧 Blocked by:` line listing each blocker's id, status, and title (open ones flagged 🚧, closed ones ✅).
+- The stale-flag and snooze-or-demote suggestion are **suppressed** — a task waiting on a deliberate blocker shouldn't be penalized for not progressing.
+- The replacement suggestion becomes "blocked — chase blocker(s) or demote".
+- Stats gain a `Blocked by another open task: N` line.
+- `render-today.js` emits a `🚧 blocked-by:TASK-N,TASK-M` token on the task's line — but only for *still-open* blockers, so the token disappears once the blocker closes.
+
+When the user describes a task that genuinely depends on another, set the blocker explicitly (`--blocked-by N`) instead of letting the dependency live in prose. Closure of the blocker doesn't auto-close the dependent — the user picks the action during the next triage.
+
+---
+
+## Task archive — `node tools/tasks/archive.js`
+
+`tasks.yml` is append-only by design (audit trail), but it shouldn't grow forever. The archive script moves any `status: done|cancelled` row with `done_at < today - 14d` into `tasks-archive.yaml` (created on first run, same schema, sorted by `done_at` ascending).
+
+- **Default retention:** 14 days. Pass `--days N` to override, or `--all` to archive every closed row regardless of age.
+- **Idempotent:** dedups by `id` against the existing archive. Safe to run on every `/wrap-up`.
+- **Wired into `/wrap-up` Step 4.5b** — runs daily as part of end-of-day routine.
+- **Backfill safety:** closed rows missing `done_at` get stamped today and kept one cycle (so a date-less row doesn't get archived without chronological position).
+- **Re-importing a task:** intentional friction. Manually move the row from `tasks-archive.yaml` → `tasks.yml` and set `status: open`.
+
 ---
 
 ## The Cascade Protocol
