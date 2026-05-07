@@ -43,16 +43,16 @@ I use this every day and so far it's been a lot of fun.
 - You have specific targets you're trying to hit: calls booked, customers signed, experiments run, papers read
 - You've already hit the wall where your LLM session gets too long, starts forgetting things, or starts hallucinating older context
 
-**This is NOT for users looking for full automation.** Battle Plan is a foundation layer for people who want to work *with* an AI as a project manager — actively, daily, hands-on. The memory system is only as good as the input you give it. Concretely, that means:
+**This is NOT for users looking for full automation.** Battle Plan is a foundation layer for people who want to work *with* an AI as a project manager, actively, daily, hands-on. The memory system is only as good as the input you give it. Concretely, that means:
 
-- You run `/good-morning`, `/wrap-up`, and `/weekly-triage` religiously. They're 10-25 minutes each and they're the spine of the system. Skip them and the cascade silts up.
-- You transcribe your meetings (any tool — phone recording + Whisper, Otter, whatever), drop the transcripts in, and answer Claude's follow-up questions about them.
-- You go through old tasks during weekly triage and use your own brain to merge, demote, and reorganize. The script gives Claude the data; Claude gives you the bounded choices; you make the strategic calls.
-- You give Claude as much context as you can stand to type, because the more it has, the sharper its briefings.
+- You run `/good-morning`, `/wrap-up`, and `/weekly-triage` religiously. They're a few minutes each (depending on how big your context layer gets) and they're the spine of the system. Skip them and the cascade silts up.
+- You transcribe your meetings (any tool: phone recording + Whisper, Otter, Granola, Gemini's meeting assistant, whatever), drop the transcripts in, and answer Claude's follow-up questions about them.
+- You go through old tasks with the LLM during weekly triage and put effort into merging, demoting, and reorganizing. The script gives Claude the data; Claude gives you the bounded choices; you make the strategic calls.
+- You give Claude as much context as you can stand to type, because the more it has, the sharper are the briefings.
 
-In return, you get a memory layer that compounds. Week 1 it's a glorified todo list. By week 6 it's a working twin of your project. By month 3, when you `cd` into the folder and open Claude, it already knows what's going on and starts prompting *you* — "did you ever hear back from X?", "you said you'd test H42 today, where did that land?". The work the AI does for you grows over time; the work you do for the AI shrinks. You can drift toward something close to full automation, but you have to earn it by investing the early effort.
+In return, you get a memory layer that compounds. Week 1 it's a glorified todo list. By week 6 it's a working twin of your project. By month 3, when you `cd` into the folder and open Claude, it knows the state of your project so well that it starts prompting *you* like "did you ever hear back from X?", "you said you'd test H42 today, where did that land?". The work the AI does for you grows over time; the work you do for the AI shrinks. You can drift toward something close to full automation, but it takes time.
 
-If you want to drop in a tool and have it figure your project out from scratch, this is the wrong system. If you want to invest a few weeks teaching it your project so it can run alongside you for the next year, this is the right one.
+If you want to drop in a tool and have it figure your project out from scratch, this is the wrong system. If you're invested enough in your project so that it only takes a few extra copy/pastes to grow this context layer, so that it can run alongside you for the next year, then this is the right one.
 
 ## Quick start
 
